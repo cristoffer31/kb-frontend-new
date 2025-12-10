@@ -38,9 +38,9 @@ export function AuthProvider({ children }) {
     setUsuario(user);
   }
 
-  async function register(nombre, email, password) {
-    await registerApi(nombre, email, password);
-  }
+  async function register(nombre, email, password, telefono) {
+  await registerApi(nombre, email, password, telefono);
+}
 
   function logout() {
     localStorage.removeItem("token");

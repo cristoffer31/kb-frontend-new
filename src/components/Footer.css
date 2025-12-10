@@ -1,6 +1,6 @@
 .footer {
   /* CORRECCIÓN: Usamos el mismo degradado azul de tu Navbar */
-  background: linear-gradient(90deg, #0094ff 0%, #4ad9ff 100%);
+  background: linear-gradient(90deg, #0094ff 0%, #2563eb 100%);
   color: white;
   padding: 60px 0 20px;
   margin-top: auto; /* Empuja el footer al fondo */
@@ -69,17 +69,20 @@
 /* REDES SOCIALES */
 .footer-socials { 
   display: flex; 
-  gap: 15px; 
-  font-size: 1.5rem; 
+  gap: 25px; 
+   
+  margin-top: 10px;
 }
 .footer-socials a { 
   color: white; 
   opacity: 0.9;
+  font-size: 2.2rem;
   transition: 0.2s;
 }
 .footer-socials a:hover { 
   opacity: 1; 
-  transform: scale(1.1) rotate(5deg); 
+  transform: translateY(-5px) scale(1.1); 
+  filter: drop-shadow(0 0 8px rgba(255,255,255,0.6));
 }
 
 /* BARRA INFERIOR */

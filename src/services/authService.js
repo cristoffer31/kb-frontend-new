@@ -9,8 +9,8 @@ export async function loginApi(email, password) {
   return res.data;
 }
 
-export async function registerApi(nombre, email, password) {
-  return api.post("/auth/register", { nombre, email, password });
+export async function registerApi(nombre, email, password, telefono) {
+  return api.post("/auth/register", { nombre, email, password, telefono });
 }
 
 export async function meApi() {

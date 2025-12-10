@@ -1,0 +1,49 @@
+.admin-config { color: #e2e8f0; }
+
+.config-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 25px;
+}
+
+.config-card {
+    background: #1e293b;
+    padding: 25px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.config-card h3 {
+    margin: 0 0 20px 0;
+    color: #38bdf8;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 15px;
+    font-size: 1.1rem;
+}
+
+.form-group { margin-bottom: 15px; }
+.form-group label { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #94a3b8; margin-bottom: 8px; }
+
+.form-group input, .form-group textarea {
+    width: 100%;
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: white;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+.form-group input:focus, .form-group textarea:focus {
+    border-color: #38bdf8; outline: none;
+}
+
+.btn-save-config {
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    color: white; padding: 15px 30px; border: none; border-radius: 10px;
+    font-weight: 700; font-size: 1rem; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 10px;
+}
+.btn-save-config:hover { filter: brightness(1.1); transform: translateY(-2px); }
+
+.msg-config { margin-left: 15px; font-weight: 600; color: #facc15; }

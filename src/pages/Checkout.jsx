@@ -177,7 +177,8 @@ export default function Checkout() {
     try {
         const payload = {
             departamento: d.departamento,
-            direccion: `${d.direccion}, ${d.ciudad}. Tel: ${d.telefono}`,
+            telefono: d.telefono,
+            direccion: `${d.direccion}, ${d.ciudad}`,
             coordenadas: d.coordenadas,
             costoEnvio: d.costoEnvio,
             paypalOrderId: paypalId,

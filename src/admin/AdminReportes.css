@@ -1,0 +1,51 @@
+.admin-reportes { color: #e2e8f0; animation: fadeIn 0.5s ease; }
+
+.header-reportes {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 30px; flex-wrap: wrap; gap: 15px;
+}
+
+.controles-reporte { display: flex; gap: 15px; align-items: center; }
+
+.filtro-fecha {
+    display: flex; align-items: center; gap: 10px;
+    background: #1e293b; padding: 10px 15px; border-radius: 50px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.filtro-fecha input {
+    background: transparent; border: none; color: white;
+    font-family: inherit; cursor: pointer;
+}
+
+.btn-excel {
+    background: #10b981; color: white; border: none;
+    padding: 10px 20px; border-radius: 50px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 8px;
+    transition: 0.2s;
+}
+.btn-excel:hover { background: #059669; transform: translateY(-2px); }
+
+/* GRIDS */
+.grid-graficas {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 25px; margin-bottom: 30px;
+}
+
+.card-grafica {
+    background: #1e293b; padding: 25px; border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+.card-grafica h3 {
+    margin: 0 0 20px 0; color: #94a3b8; font-size: 1rem;
+    display: flex; align-items: center; gap: 8px;
+}
+.icon-title { color: #38bdf8; }
+
+/* TABLA */
+.tabla-resumen-container {
+    background: #1e293b; padding: 25px; border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+.tabla-resumen { width: 100%; border-collapse: collapse; margin-top: 15px; }
+.tabla-resumen th { text-align: left; padding: 12px; color: #94a3b8; border-bottom: 1px solid #334155; }
+.tabla-resumen td { padding: 12px; border-bottom: 1px solid #334155; color: #e2e8f0; }

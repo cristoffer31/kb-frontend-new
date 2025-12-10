@@ -1,12 +1,14 @@
 import React, { useState, useContext, useEffect } from "react";
 import api from "../services/api";
+import { obtenerConfiguracionPublica } from "../services/configService";
 import "./Contacto.css";
-import { AuthContext } from "../context/AuthContext"; // <--- IMPORTAR CONTEXTO
-import { FaPhoneAlt, FaEnvelope, FaMapMarkerAlt, FaWhatsapp, FaInstagram, FaFacebook } from "react-icons/fa";
+import { AuthContext } from "../context/AuthContext";
+import { FaPhoneAlt, FaEnvelope, FaMapMarkerAlt, FaWhatsapp, FaInstagram, FaFacebook, FaTiktok } from "react-icons/fa";
 
 export default function Contacto() {
-  const { usuario } = useContext(AuthContext); // <--- OBTENER USUARIO
-  
+  const { usuario } = useContext(AuthContext);
+  const [config, setConfig] = useState(null);
+
   const [form, setForm] = useState({ 
       nombre: "", 
       email: "", 
@@ -18,7 +20,14 @@ export default function Contacto() {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
 
-  // EFECTO: Llenar datos automáticamente si el usuario existe
+  // Cargar configuración
+  useEffect(() => {
+    obtenerConfiguracionPublica().then(data => {
+        if (data) setConfig(data);
+    });
+  }, []);
+
+  // Prellenar datos
   useEffect(() => {
       if (usuario) {
           setForm(prev => ({
@@ -41,11 +50,8 @@ export default function Contacto() {
     try {
       await api.post("/contacto", form);
       setEnviado(true);
-      // Limpiamos solo asunto y mensaje, dejamos nombre/email
       setForm(prev => ({ ...prev, asunto: "", mensaje: "" }));
-      
       setTimeout(() => setEnviado(false), 5000);
-
     } catch (err) {
       console.error(err);
       setError("Hubo un problema al enviar el mensaje. Intenta más tarde.");
@@ -63,41 +69,73 @@ export default function Contacto() {
 
       <div className="contacto-grid">
         
-        {/* INFO IZQUIERDA (Igual que antes) */}
+        {/* INFO IZQUIERDA (DINÁMICA) */}
         <div className="contacto-card-blue">
           <h3>Información de Contacto</h3>
+          
           <div className="info-item">
             <div className="info-icon"><FaPhoneAlt /></div>
             <div>
               <p style={{opacity:0.8, fontSize:'0.85rem', margin:0, color:'white'}}>Llámanos</p>
-              <strong style={{color:'white'}}>+503 7000-0000</strong>
+              {/* CAMBIO CLAVE: USA TELEFONO CONTACTO (TEXTO) */}
+              <strong style={{color:'white'}}>{config ? config.telefonoContacto : "Cargando..."}</strong>
             </div>
           </div>
+
           <div className="info-item">
             <div className="info-icon"><FaEnvelope /></div>
             <div>
               <p style={{opacity:0.8, fontSize:'0.85rem', margin:0, color:'white'}}>Escríbenos</p>
-              <strong style={{color:'white'}}>soporte@kbcollection.com</strong>
+              <strong style={{color:'white'}}>{config ? config.emailContacto : "Cargando..."}</strong>
             </div>
           </div>
+
           <div className="info-item">
             <div className="info-icon"><FaMapMarkerAlt /></div>
             <div>
               <p style={{opacity:0.8, fontSize:'0.85rem', margin:0, color:'white'}}>Ubicación</p>
-              <strong style={{color:'white'}}>San Salvador, El Salvador</strong>
+              <strong style={{color:'white'}}>{config ? config.direccionTienda : "Cargando..."}</strong>
             </div>
           </div>
+
+          {/* REDES SOCIALES */}
           <div className="social-links">
-            <a href="#" className="social-btn"><FaWhatsapp /></a>
-            <a href="#" className="social-btn"><FaInstagram /></a>
-            <a href="#" className="social-btn"><FaFacebook /></a>
+            {/* WHATSAPP USA TELEFONO VENTAS (LINK) */}
+            {config?.telefonoVentas && (
+                <a 
+                    href={`https://wa.me/${config.telefonoVentas}`} 
+                    target="_blank" rel="noreferrer" 
+                    className="social-btn" title="WhatsApp"
+                >
+                    <FaWhatsapp />
+                </a>
+            )}
+            
+            {config?.facebookUrl && (
+                <a href={config.facebookUrl} target="_blank" rel="noreferrer" className="social-btn" title="Facebook">
+                    <FaFacebook />
+                </a>
+            )}
+
+            {config?.instagramUrl && (
+                <a href={config.instagramUrl} target="_blank" rel="noreferrer" className="social-btn" title="Instagram">
+                    <FaInstagram />
+                </a>
+            )}
+
+            {config?.tiktokUrl && (
+                <a href={config.tiktokUrl} target="_blank" rel="noreferrer" className="social-btn" title="TikTok">
+                    <FaTiktok />
+                </a>
+            )}
           </div>
+
           <div className="mapa-box">
             <iframe 
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d62014.20756706784!2d-89.24945934179688!3d13.698267200000001!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8f6330674f7b0a5d%3A0x821f00a4f7909f22!2sSan%20Salvador%2C%20El%20Salvador!5e0!3m2!1ses!2s!4v1700000000000!5m2!1ses!2s" 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15505.686622345678!2d-89.218191!3d13.692940!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8f63306733220555%3A0x6d90e2920e03000!2sSan%20Salvador!5e0!3m2!1ses!2ssv!4v1600000000000!5m2!1ses!2ssv" 
                 width="100%" height="100%" style={{border:0}} 
                 allowFullScreen="" loading="lazy" 
-                title="Mapa KB Collection"
+                title="Mapa Tienda"
             ></iframe>
           </div>
         </div>
@@ -113,8 +151,9 @@ export default function Contacto() {
                     name="nombre" 
                     value={form.nombre} 
                     onChange={handleChange} 
-                    disabled // Bloqueado para que use su nombre real
-                    style={{background:'#f3f4f6', cursor:'not-allowed'}}
+                    disabled={!!usuario}
+                    required
+                    style={usuario ? {background:'#f3f4f6', cursor:'not-allowed'} : {}}
                 />
             </div>
             <div className="form-group">
@@ -124,8 +163,9 @@ export default function Contacto() {
                     name="email" 
                     value={form.email} 
                     onChange={handleChange} 
-                    disabled // Bloqueado para seguridad
-                    style={{background:'#f3f4f6', cursor:'not-allowed'}}
+                    disabled={!!usuario}
+                    required
+                    style={usuario ? {background:'#f3f4f6', cursor:'not-allowed'} : {}}
                 />
             </div>
             <div className="form-group">

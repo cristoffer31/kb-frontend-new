@@ -20,3 +20,7 @@ export async function adminActualizarEstado(id, nuevoEstado) {
   });
   return res.data;
 }
+export async function obtenerConteoPendientes() {
+  const res = await api.get("/pedidos/conteo-pendientes");
+  return res.data; // Devuelve un número (ej: 5)
+}

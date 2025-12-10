@@ -44,10 +44,18 @@ export default function Home() {
       <section className="home-hero">
         <div className="container home-hero-inner">
           <div className="home-hero-left">
-            <span style={{textTransform:'uppercase', letterSpacing:'2px', fontSize:'0.85rem', color:'#93c5fd', fontWeight:'bold'}}>
-              Tienda Oficial
-            </span>
-            <h1>KB COLLECTION <br/><span className="hero-highlight">INTERNACIONAL</span></h1>
+            <div style={{ margin: "20px 0" }}>
+              <img 
+                src="/kb_logo_M.png" 
+                alt="KB Collection" 
+                style={{ 
+                  maxWidth: "450px", 
+                  width: "100%",     
+                  height: "auto",
+                  filter: "drop-shadow(0 10px 20px rgba(0,0,0,0.3))" 
+                }} 
+              />
+            </div>
             <p>Encuentra los mejores productos de higiene y cuidado personal. Precios especiales por mayoreo y envios accesibles.</p>
             
             <div className="hero-actions">

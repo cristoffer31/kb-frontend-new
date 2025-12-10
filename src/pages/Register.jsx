@@ -13,6 +13,7 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
+  const [telefono, setTelefono] = useState("");
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -20,7 +21,7 @@ export default function Register() {
     setOk("");
 
     try {
-      await register(nombre, email, password);
+      await register(nombre, email, password, telefono);
       setOk("Registro exitoso. Ahora puedes iniciar sesión.");
       setTimeout(() => navigate("/login"), 1500);
     } catch (err) {
@@ -72,6 +73,14 @@ export default function Register() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
+
+          <input 
+  type="text" 
+  placeholder="Teléfono" 
+  value={telefono} 
+  onChange={(e) => setTelefono(e.target.value)} 
+  required 
+/>
 
           <input
             type="password"

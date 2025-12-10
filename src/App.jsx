@@ -35,6 +35,10 @@ import AdminCarousel from "./admin/AdminCarousel.jsx";
 import AdminZonas from "./admin/AdminZonas.jsx";
 import AdminUsuarios from "./admin/AdminUsuarios.jsx";
 
+import AdminConfiguracion from "./admin/AdminConfiguracion.jsx";
+import AdminReportes from "./admin/AdminReportes.jsx";
+import WhatsAppButton from "./components/WhatsAppButton.jsx";
+
 function App() {
   const location = useLocation();
   
@@ -92,10 +96,16 @@ function App() {
 <Route path="/admin/zonas" element={<RequireAdmin><AdminLayout><AdminZonas /></AdminLayout></RequireAdmin>} />
 <Route path="/admin/usuarios" element={<RequireAdmin><AdminLayout><AdminUsuarios /></AdminLayout></RequireAdmin>} />
 
+
+<Route path="/admin/configuracion" element={<RequireAdmin><AdminLayout><AdminConfiguracion /></AdminLayout></RequireAdmin>} />
+<Route path="/admin/reportes" element={<RequireAdmin><AdminLayout><AdminReportes /></AdminLayout></RequireAdmin>} />
+
+
         </Routes>
       </main>
 
       {/* Solo mostramos Footer si NO es admin */}
+      {!isAdminRoute && <WhatsAppButton />}
       {!isAdminRoute && <Footer />}
     </div>
   );
