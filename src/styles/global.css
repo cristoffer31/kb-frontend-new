@@ -1,0 +1,50 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+body {
+  background: #f8f9fa;
+  overflow-x: hidden;
+}
+
+/* CONTENEDOR PRINCIPAL */
+.app-main {
+  padding-top: 180px !important; /* Espacio suficiente para que no se pegue */
+  min-height: 85vh;
+  padding-bottom: 60px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ajuste Móvil */
+@media (max-width: 768px) {
+  .app-main {
+    padding-top: 200px !important;
+  }
+}
+
+/* Botones */
+.btn-primary {
+  background: linear-gradient(135deg, #0061ff, #004aad);
+  color: white;
+  padding: 10px 24px;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+  box-shadow: 0 4px 12px rgba(0, 97, 255, 0.3);
+}
+.btn-primary:hover { transform: translateY(-2px); opacity: 0.9; }
+
+.section-title {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 50px 0 30px;
+  text-align: center;
+  color: #1e293b;
+}

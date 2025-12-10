@@ -1,0 +1,67 @@
+.mis-pedidos-container {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 20px;
+  min-height: 60vh;
+}
+
+.mis-pedidos-container h2 {
+  color: #004aad;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.pedido-card {
+  background: white;
+  border: 1px solid #eee;
+  border-left: 5px solid #004aad;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pedido-info h4 {
+  margin: 0 0 5px 0;
+  color: #333;
+}
+
+.pedido-info p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.pedido-status {
+  padding: 5px 12px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.status-pendiente { background-color: #fff3cd; color: #856404; }
+.status-enviado { background-color: #d1ecf1; color: #0c5460; }
+.status-entregado { background-color: #d4edda; color: #155724; }
+
+.pedido-total {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #004aad;
+}
+
+.btn-volver {
+  display: block;
+  width: fit-content;
+  margin: 20px auto;
+  padding: 10px 20px;
+  background: #eee;
+  color: #333;
+  text-decoration: none;
+  border-radius: 5px;
+}

@@ -1,0 +1,18 @@
+.admin-cupones { color: #e5e7eb; }
+.cupon-form { display: flex; gap: 10px; margin-bottom: 30px; background: #1e293b; padding: 20px; border-radius: 12px; }
+.cupon-form input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; }
+.cupon-form button { background: #3b82f6; color: white; border: none; padding: 0 25px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+.cupones-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+.cupon-card { background: #1e293b; border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 15px; border: 1px solid #334155; transition: 0.3s; position: relative; overflow: hidden; }
+.cupon-card.activo { border-left: 5px solid #22c55e; }
+.cupon-card.inactivo { border-left: 5px solid #64748b; opacity: 0.7; }
+
+.cupon-icon { font-size: 2rem; color: #38bdf8; opacity: 0.5; }
+.cupon-info h3 { margin: 0; font-size: 1.4rem; letter-spacing: 1px; }
+.porcentaje { color: #38bdf8; font-weight: bold; display: block; }
+.estado { font-size: 0.8rem; color: #94a3b8; }
+
+.cupon-actions { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+.btn-toggle, .btn-trash { background: none; border: none; cursor: pointer; display: flex; }
+.btn-trash { color: #ef4444; font-size: 1.1rem; }

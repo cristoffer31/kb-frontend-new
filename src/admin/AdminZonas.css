@@ -1,0 +1,18 @@
+.admin-zonas { color: #e5e7eb; }
+.zona-form { background: #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 30px; }
+.form-row { display: flex; gap: 10px; margin-bottom: 10px; }
+.zona-form input, .zona-form textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; }
+.zona-form textarea { height: 80px; resize: vertical; margin-bottom: 10px; }
+.zona-form button { background: #38bdf8; color: #0f172a; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-right: 10px; }
+.btn-cancel { background: #64748b !important; color: white !important; }
+
+.zonas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+.zona-card { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; }
+.zona-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+.zona-header h4 { margin: 0; color: #38bdf8; }
+.zona-precio { font-weight: bold; color: #4ade80; font-size: 1.2rem; }
+.zona-lista { font-size: 0.85rem; color: #9ca3af; line-height: 1.5; margin-bottom: 15px; }
+.zona-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.btn-edit, .btn-trash { background: rgba(255,255,255,0.1); border: none; color: white; padding: 8px; border-radius: 6px; cursor: pointer; }
+.btn-edit:hover { background: #38bdf8; color: #0f172a; }
+.btn-trash:hover { background: #ef4444; }

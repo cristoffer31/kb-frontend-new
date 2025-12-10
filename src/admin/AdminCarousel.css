@@ -1,0 +1,11 @@
+.admin-carousel { color: #e2e8f0; }
+.carousel-form { display: flex; gap: 10px; margin-bottom: 30px; background: #1e293b; padding: 20px; border-radius: 12px; align-items: center; }
+.carousel-form input[type="text"] { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; }
+.carousel-form button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+.carousel-form button:disabled { opacity: 0.7; cursor: wait; }
+
+.banners-grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.banner-card { background: #1e293b; border-radius: 12px; overflow: hidden; border: 1px solid #334155; }
+.banner-card img { width: 100%; height: 150px; object-fit: cover; }
+.banner-info { padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; }
+.btn-trash { background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 1.1rem; }

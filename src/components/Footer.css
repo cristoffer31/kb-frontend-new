@@ -1,0 +1,99 @@
+.footer {
+  /* CORRECCIÓN: Usamos el mismo degradado azul de tu Navbar */
+  background: linear-gradient(90deg, #0094ff 0%, #4ad9ff 100%);
+  color: white;
+  padding: 60px 0 20px;
+  margin-top: auto; /* Empuja el footer al fondo */
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.1); /* Sombra suave arriba */
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
+  padding: 0 20px;
+  margin-bottom: 40px;
+}
+
+/* LOGO */
+.footer-logo { 
+  font-size: 1.8rem; 
+  color: white; 
+  margin-bottom: 15px; 
+  font-weight: 800; 
+  letter-spacing: 1px;
+}
+.footer-logo span { 
+  color: #e0f2fe; /* Azul muy clarito para contrastar */
+}
+.footer-copy { 
+  font-size: 0.9rem; 
+  margin-top: 15px; 
+  opacity: 0.9; 
+  line-height: 1.6;
+}
+
+/* COLUMNAS */
+.footer-col h4 { 
+  color: white; 
+  margin-bottom: 20px; 
+  font-size: 1.1rem; 
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.footer-col a { 
+  display: block; 
+  color: rgba(255, 255, 255, 0.9); 
+  text-decoration: none; 
+  margin-bottom: 10px; 
+  transition: 0.2s; 
+  font-size: 0.95rem;
+}
+
+.footer-col a:hover { 
+  color: white; 
+  transform: translateX(5px); 
+  text-shadow: 0 0 8px rgba(255,255,255,0.4);
+}
+
+.footer-col p {
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+}
+
+/* REDES SOCIALES */
+.footer-socials { 
+  display: flex; 
+  gap: 15px; 
+  font-size: 1.5rem; 
+}
+.footer-socials a { 
+  color: white; 
+  opacity: 0.9;
+  transition: 0.2s;
+}
+.footer-socials a:hover { 
+  opacity: 1; 
+  transform: scale(1.1) rotate(5deg); 
+}
+
+/* BARRA INFERIOR */
+.footer-bottom {
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.3); /* Línea blanca semitransparente */
+  padding-top: 20px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .footer-inner { grid-template-columns: 1fr; gap: 30px; text-align: center; }
+  .footer-socials { justify-content: center; }
+  .footer-col a:hover { transform: none; }
+}
