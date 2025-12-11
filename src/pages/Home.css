@@ -2,7 +2,7 @@
    HOME GENERAL
 ========================================= */
 .home-wrapper { width: 100%; display: flex; flex-direction: column; background: #f8fafc; }
-.container { width: 100%; max-width: 1280px; margin: 0 auto; padding: 0 20px; }
+.container { width: 100%; max-width: 96%; margin: 0 auto; padding: 0 20px; }
 section { margin-bottom: 60px; }
 
 /* Títulos de Sección */
@@ -75,12 +75,13 @@ section { margin-bottom: 60px; }
 .categories-section { padding: 20px 0 40px; } /* Ajuste de padding */
 .categories-grid {
   display: flex; gap: 20px; overflow-x: auto; padding: 10px 5px;
+  justify-content: flex-start;
   scrollbar-width: none; /* Firefox */ -ms-overflow-style: none; /* IE */
 }
 .categories-grid::-webkit-scrollbar { display: none; /* Chrome/Safari */ }
 
 .category-card-modern {
-  min-width: 160px; flex: 0 0 auto; /* Tamaño fijo, no encoger */
+  min-width: 200px; flex: 0 0 auto; /* Tamaño fijo, no encoger */
   background: white; border: 1px solid #e2e8f0; border-radius: 16px;
   padding: 20px; text-align: center; cursor: pointer; transition: 0.3s all ease;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -118,9 +119,9 @@ section { margin-bottom: 60px; }
 .product-grid-normal {
     display: grid;
     /* Crea columnas automáticas de mín 240px de ancho */
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 25px;
-    margin-top: 30px;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 30px;
+    margin-top: 40px;
 }
 
 /* =========================================
@@ -132,10 +133,11 @@ section { margin-bottom: 60px; }
    RESPONSIVE
 ========================================= */
 @media (max-width: 900px) {
+  /* En móvil regresamos a márgenes normales para que no se pegue al borde */
+  .container { width: 95%; padding: 0 15px; } 
   .home-hero-inner { grid-template-columns: 1fr; text-align: center; gap: 40px; }
-  .home-hero-left h1 { font-size: 2.8rem; }
   .hero-actions { justify-content: center; }
-  .hero-info-cards { display: none; /* Ocultar tarjetas info en móvil para ahorrar espacio */ }
+  .hero-info-cards { display: none; }
   .ofertas-section-pro { padding: 25px 15px; }
-  .product-grid-normal { grid-template-columns: repeat(2, 1fr); gap: 15px; } /* 2 columnas en móvil */
+  .product-grid-normal { grid-template-columns: repeat(2, 1fr); gap: 15px; }
 }
