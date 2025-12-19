@@ -1,13 +1,17 @@
-// src/components/RequireAuth.jsx
-import React, { useContext } from "react";
-import { Navigate } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
+import { useContext } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 
-export function RequireAuth({ children }) {
-  const { isLogged, cargandoAuth } = useContext(AuthContext);
+export const RequireAuth = ({ children }) => {
+    const { user, loading } = useContext(AuthContext);
+    const location = useLocation();
 
-  if (cargandoAuth) return <div>Cargando...</div>;
-  if (!isLogged) return <Navigate to="/login" replace />;
+    if (loading) return <div>Cargando...</div>; // Evita que redirija antes de tiempo
+
+    if (!user) {
+        // Guardamos la ruta a la que quería ir para volver ahí después del login
+        return <Navigate to="/login" state={{ from: location }} replace />;
+    }
 
   return children;
-}
+};

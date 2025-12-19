@@ -1,45 +1,35 @@
 import api from "../../services/api";
 
-// LISTAR TODAS
+// 1. LISTAR
 export async function listarCategorias() {
-  const res = await api.get("/categorias");
+  try {
+    const res = await api.get("/categorias");
+    if (res.data.data && Array.isArray(res.data.data)) return res.data.data;
+    if (Array.isArray(res.data)) return res.data;
+    return [];
+  } catch (e) { return []; }
+}
+
+// 2. CREAR
+export async function crearCategoria(formData) {
+  // RECIBIMOS EL PAQUETE (formData) LISTO DESDE EL COMPONENTE
+  // No creamos 'new FormData()' aquí. Solo lo enviamos.
+  const res = await api.post("/categorias", formData, {
+      headers: { "Content-Type": "multipart/form-data" }
+  });
   return res.data;
 }
 
-// CREAR (Con Imagen)
-export async function crearCategoria(data, archivo) {
-  let urlImagen = "";
-  
-  if (archivo) {
-      const fd = new FormData();
-      fd.append("file", archivo);
-      const uploadRes = await api.post("/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      urlImagen = uploadRes.data.url;
-  }
-
-  // Enviamos JSON con la URL
-  const payload = { ...data, imagenUrl: urlImagen };
-  const res = await api.post("/categorias", payload);
+// 3. ACTUALIZAR
+export async function actualizarCategoria(id, formData) {
+  // El componente ya incluyó '_method: PUT' dentro del formData
+  const res = await api.post(`/categorias/${id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" }
+  });
   return res.data;
 }
 
-// ACTUALIZAR (Con Imagen)
-export async function actualizarCategoria(id, data, archivo) {
-  let urlImagen = data.imagenUrl; // Mantener la anterior si no hay nueva
-
-  if (archivo) {
-      const fd = new FormData();
-      fd.append("file", archivo);
-      const uploadRes = await api.post("/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      urlImagen = uploadRes.data.url;
-  }
-
-  const payload = { ...data, imagenUrl: urlImagen };
-  const res = await api.put(`/categorias/${id}`, payload);
-  return res.data;
-}
-
-// ELIMINAR
+// 4. ELIMINAR
 export async function eliminarCategoria(id) {
   return api.delete(`/categorias/${id}`);
 }

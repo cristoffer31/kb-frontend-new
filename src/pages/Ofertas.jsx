@@ -1,14 +1,18 @@
 import React, { useEffect, useState } from "react";
-import api from "../services/api"; // O crea la función en productoService
+import api from "../services/api"; 
 import ProductCard from "../components/ProductCard";
 
 export default function Ofertas() {
   const [productos, setProductos] = useState([]);
 
   useEffect(() => {
-    // Llamamos al nuevo endpoint del backend
+    // Usamos el endpoint que definimos en Laravel
     api.get("/productos/ofertas")
-       .then(res => setProductos(res.data))
+       .then(res => {
+           // Normalización data.data
+           const lista = res.data.data || (Array.isArray(res.data) ? res.data : []);
+           setProductos(lista);
+       })
        .catch(err => console.error(err));
   }, []);
 

@@ -1,78 +1,62 @@
 import api from "../../services/api";
 
-// LISTAR
 export async function listarProductos() {
-  const res = await api.get("/productos");
-  return res.data;
+  try {
+    const res = await api.get("/productos");
+    if (res.data.data) return res.data.data;
+    if (Array.isArray(res.data)) return res.data;
+    return [];
+  } catch (e) { return []; }
 }
 
-// CREAR (Modo 2 Pasos: Subir Imagen -> Enviar JSON)
-export async function crearProducto(producto, archivo) {
-  let urlImagen = producto.imagenUrl || "";
-
-  // 1. Si hay archivo, lo subimos primero al endpoint de upload
-  if (archivo) {
-    const fd = new FormData();
-    fd.append("file", archivo);
-    
-    try {
-        const uploadRes = await api.post("/upload", fd, {
-            headers: { "Content-Type": "multipart/form-data" }
+export async function crearProducto(datos, archivo) {
+  const fd = new FormData();
+  
+  Object.keys(datos).forEach(key => {
+    if (key === 'preciosMayoreo' && Array.isArray(datos[key])) {
+        datos[key].forEach((pm, index) => {
+            fd.append(`preciosMayoreo[${index}][cantidadMin]`, pm.cantidadMin);
+            fd.append(`preciosMayoreo[${index}][precioUnitario]`, pm.precioUnitario);
         });
-        urlImagen = uploadRes.data.url; // Obtenemos la URL segura (Cloudinary/Local)
-    } catch (e) {
-        console.error("Error subiendo imagen", e);
-        throw new Error("No se pudo subir la imagen");
+    } else if (datos[key] !== null && datos[key] !== undefined) {
+        // Convertimos booleano a 1/0 para Laravel
+        if (typeof datos[key] === 'boolean') fd.append(key, datos[key] ? 1 : 0);
+        else fd.append(key, datos[key]);
     }
-  }
+  });
 
-  // 2. Preparamos el JSON final para el backend
-  const payload = {
-      ...producto,
-      imagenUrl: urlImagen,
-      // Mapeo importante: Frontend usa "categoriaId", Backend espera "categoryId"
-      categoryId: producto.categoriaId 
-  };
+  if (archivo) fd.append("imagen", archivo);
 
-  // 3. Enviamos JSON al endpoint de productos
-  const res = await api.post("/productos", payload);
+  const res = await api.post("/productos", fd, {
+    headers: { "Content-Type": "multipart/form-data" }
+  });
   return res.data;
 }
 
-// ACTUALIZAR (Modo 2 Pasos)
-export async function actualizarProducto(id, producto, archivo) {
-  let urlImagen = producto.imagenUrl;
+export async function actualizarProducto(id, datos, archivo) {
+  const fd = new FormData();
+  fd.append("_method", "PUT"); // CRUCIAL PARA LARAVEL
 
-  // 1. Si hay archivo nuevo, lo subimos
-  if (archivo) {
-    const fd = new FormData();
-    fd.append("file", archivo);
-    
-    try {
-        const uploadRes = await api.post("/upload", fd, {
-            headers: { "Content-Type": "multipart/form-data" }
+  Object.keys(datos).forEach(key => {
+    if (key === 'preciosMayoreo' && Array.isArray(datos[key])) {
+        datos[key].forEach((pm, index) => {
+            fd.append(`preciosMayoreo[${index}][cantidadMin]`, pm.cantidadMin);
+            fd.append(`preciosMayoreo[${index}][precioUnitario]`, pm.precioUnitario);
         });
-        urlImagen = uploadRes.data.url;
-    } catch (e) {
-        console.error("Error subiendo imagen", e);
-        throw new Error("No se pudo subir la imagen");
+    } else if (datos[key] !== null && datos[key] !== undefined) {
+        if (typeof datos[key] === 'boolean') fd.append(key, datos[key] ? 1 : 0);
+        else fd.append(key, datos[key]);
     }
-  }
+  });
 
-  // 2. Preparamos el JSON
-  const payload = {
-      ...producto,
-      imagenUrl: urlImagen,
-      // Mapeo importante
-      categoryId: producto.categoriaId
-  };
+  if (archivo) fd.append("imagen", archivo);
 
-  // 3. Enviamos JSON (PUT)
-  const res = await api.put(`/productos/${id}`, payload);
+  const res = await api.post(`/productos/${id}`, fd, {
+    headers: { "Content-Type": "multipart/form-data" }
+  });
   return res.data;
 }
 
-// ELIMINAR
 export async function eliminarProducto(id) {
   return api.delete(`/productos/${id}`);
 }

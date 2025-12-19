@@ -1,19 +1,34 @@
-import api from "../../services/api";
+import axios from "axios";
 
-export async function obtenerVentasPorCategoria(inicio, fin) {
-  const params = {};
-  if (inicio) params.fechaInicio = inicio;
-  if (fin) params.fechaFin = fin;
-  
-  const res = await api.get("/reportes/categorias", { params });
-  return res.data;
-}
+// Ajusta tu URL base
+const API_URL = "http://localhost:8000/api"; 
 
-export async function obtenerTopClientes(inicio, fin) {
-  const params = {};
-  if (inicio) params.fechaInicio = inicio;
-  if (fin) params.fechaFin = fin;
+const getHeaders = () => {
+    const token = localStorage.getItem("token"); 
+    return { headers: { "Authorization": `Bearer ${token}` } };
+};
 
-  const res = await api.get("/reportes/clientes", { params });
-  return res.data;
-}
+export const obtenerVentasPorCategoria = async (inicio, fin) => {
+    // Enviamos las fechas como query params ?inicio=...&fin=...
+    const response = await axios.get(
+        `${API_URL}/admin/reportes/categorias?inicio=${inicio}&fin=${fin}`, 
+        getHeaders()
+    );
+    return response.data;
+};
+
+export const obtenerTopClientes = async (inicio, fin) => {
+    const response = await axios.get(
+        `${API_URL}/admin/reportes/clientes?inicio=${inicio}&fin=${fin}`, 
+        getHeaders()
+    );
+    return response.data;
+};
+
+export const obtenerReporteDetallado = async (inicio, fin) => {
+    const response = await axios.get(
+        `${API_URL}/admin/reportes/detallado?inicio=${inicio}&fin=${fin}`, 
+        getHeaders()
+    );
+    return response.data;
+};

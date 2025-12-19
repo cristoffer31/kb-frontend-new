@@ -1,391 +1,303 @@
 import React, { useEffect, useState } from "react";
-import {
-  adminListarPedidos,
-  adminActualizarEstado,
-  adminObtenerPedido,
-} from "./services/adminPedidoService";
-
+import { obtenerConfiguracion } from "./services/adminConfigService"; 
+import { adminListarPedidos, adminActualizarEstado, adminObtenerPedido } from "./services/adminPedidoService";
 import "./AdminPedidos.css";
-import { FaSearch, FaMapMarkerAlt, FaWhatsapp, FaPrint, FaCalendarAlt } from "react-icons/fa";
+
+// Iconos
+import { 
+    FaSearch, FaMapMarkerAlt, FaWhatsapp, FaPrint, FaTimes, FaBoxOpen, 
+    FaClock, FaShippingFast, FaCheckCircle, FaTimesCircle, FaBox, 
+    FaCreditCard, FaMapMarkedAlt, FaUser
+} from "react-icons/fa";
 
 export default function AdminPedidos() {
   const [pedidos, setPedidos] = useState([]);
   const [filtro, setFiltro] = useState("TODOS");
   const [busqueda, setBusqueda] = useState("");
-  
-  // --- NUEVOS ESTADOS PARA FECHA ---
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
-  
   const [detalle, setDetalle] = useState(null);
+
+  const [empresa, setEmpresa] = useState({
+      nombre: "Cargando...",
+      direccion: "",
+      telefono: "",
+      email: ""
+  });
 
   async function cargar() {
     try {
       const data = await adminListarPedidos();
-      if (Array.isArray(data)) {
-        setPedidos(data);
-      } else {
-        setPedidos([]);
+      if(data) {
+        setPedidos(data.sort((a,b) => new Date(b.created_at) - new Date(a.created_at)));
       }
-    } catch (e) {
-      console.error("Error cargando pedidos", e);
-      setPedidos([]);
-    }
+    } catch (error) { console.error(error); }
   }
+
+  useEffect(() => { 
+      cargar(); 
+      obtenerConfiguracion().then(data => {
+          if (data) {
+              setEmpresa({
+                  nombre: data.nombreTienda || data.nombre_tienda || "Mi Tienda",
+                  direccion: data.direccionTienda || data.direccion || "",
+                  telefono: data.telefonoContacto || data.telefono || "",
+                  email: data.emailContacto || data.email || ""
+              });
+          }
+      }).catch(err => console.error("Error cargando config", err));
+  }, []);
 
   async function verDetalle(id) {
     try {
-      const data = await adminObtenerPedido(id);
-      setDetalle(data);
-    } catch (e) {
-      console.error("Error cargando detalle", e);
-    }
+        const data = await adminObtenerPedido(id);
+        setDetalle(data);
+    } catch (error) { alert("Error cargando detalle"); }
   }
 
-  async function cambiarEstado(id, estado) {
-    try {
-      await adminActualizarEstado(id, estado);
-      cargar();
-    } catch (e) {
-      console.error("Error actualizando estado", e);
-    }
-  }
-
-  useEffect(() => {
+  async function cambiarEstado(id, nuevoEstado) {
+    if(!window.confirm(`¿Cambiar estado a ${nuevoEstado}?`)) return;
+    await adminActualizarEstado(id, nuevoEstado);
     cargar();
-  }, []);
-
-  // --- FUNCIÓN DE FILTRADO MEJORADA ---
-  function filtrarPedidos() {
-    if (!Array.isArray(pedidos)) return [];
-
-    return pedidos
-      .filter((p) =>
-        filtro === "TODOS" ? true : p.status?.toUpperCase() === filtro
-      )
-      .filter((p) =>
-        busqueda === ""
-          ? true
-          : p.id.toString().includes(busqueda) ||
-            (p.usuario && p.usuario.nombre && p.usuario.nombre.toLowerCase().includes(busqueda.toLowerCase()))
-      )
-      .filter((p) => {
-        // Filtro por rango de fechas
-        if (!fechaInicio && !fechaFin) return true;
-        if (!p.fecha) return false;
-        
-        // Convertimos la fecha del pedido a YYYY-MM-DD para comparar
-        const fechaPedido = new Date(p.fecha).toISOString().split('T')[0];
-        
-        const cumpleInicio = !fechaInicio || fechaPedido >= fechaInicio;
-        const cumpleFin = !fechaFin || fechaPedido <= fechaFin;
-        
-        return cumpleInicio && cumpleFin;
-      });
+    if(detalle && detalle.id === id) setDetalle({...detalle, estado: nuevoEstado});
   }
 
-  const listaFiltrada = filtrarPedidos();
-
-  // --- FUNCIÓN WHATSAPP ---
-  const enviarNotificacion = (pedido) => {
-    // Busca teléfono en el pedido (nuevo) o en el usuario (viejo)
-    const tel = pedido.telefono || pedido.usuario?.telefono;
-    
-    if (!tel) return alert("Este pedido no tiene número de teléfono asociado.");
-
-    let mensaje = `Hola ${pedido.usuario?.nombre || "Cliente"}, saludamos de KB Collection. `;
-    
-    if (pedido.status === "ENVIADO") {
-      mensaje += `Le informamos que su pedido #${pedido.id} ya fue enviado y va en camino. 🚚`;
-    } else if (pedido.status === "ENTREGADO") {
-      mensaje += `Su pedido #${pedido.id} ha sido entregado. ¡Gracias por su compra! ⭐`;
-    } else {
-      mensaje += `Tenemos una actualización sobre su pedido #${pedido.id}.`;
-    }
-
-    window.open(`https://wa.me/${tel}?text=${encodeURIComponent(mensaje)}`, "_blank");
+  const enviarWhatsapp = (telefono, nombre) => {
+      if(!telefono) return alert("Sin teléfono");
+      const numeroLimpio = telefono.replace(/\D/g, ''); 
+      const mensaje = `Hola ${nombre}, le saludamos de ${empresa.nombre} respecto a su pedido...`;
+      window.open(`https://wa.me/503${numeroLimpio}?text=${encodeURIComponent(mensaje)}`, '_blank');
   };
 
-  // --- FUNCIÓN IMPRIMIR ---
-  const imprimirPedido = (pedido) => {
-    const ventana = window.open('', 'PRINT', 'height=600,width=800');
-    
-    ventana.document.write(`
-      <html>
-        <head>
-          <title>Pedido #${pedido.id}</title>
-          <style>
-            body { font-family: monospace; padding: 20px; color: #000; }
-            h1 { text-align: center; margin-bottom: 5px; }
-            .header { text-align: center; margin-bottom: 20px; border-bottom: 1px dashed #000; padding-bottom: 10px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th, td { border-bottom: 1px solid #ddd; padding: 5px; text-align: left; font-size: 12px; }
-            .total { text-align: right; font-weight: bold; font-size: 14px; margin-top: 15px; }
-            .footer { text-align: center; margin-top: 30px; font-size: 10px; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>KB COLLECTION</h1>
-            <p>San Salvador, El Salvador</p>
-            <p>Tel: +503 7000-0000</p>
-          </div>
-          
-          <p><strong>Pedido:</strong> #${pedido.id}</p>
-          <p><strong>Fecha:</strong> ${new Date(pedido.fecha).toLocaleString()}</p>
-          <p><strong>Cliente:</strong> ${pedido.usuario?.nombre}</p>
-          <p><strong>Tel:</strong> ${pedido.telefono || pedido.usuario?.telefono || 'N/A'}</p>
-          <p><strong>Dirección:</strong> ${pedido.direccion}</p>
-          
-          ${pedido.tipoComprobante === 'CREDITO_FISCAL' ? `
-            <div style="border: 1px solid #000; padding: 5px; margin: 5px 0;">
-                <strong>DATOS FISCALES</strong><br/>
-                Razon Social: ${pedido.razonSocial}<br/>
-                NIT: ${pedido.documentoFiscal}<br/>
-                NRC: ${pedido.nrc}<br/>
-                Giro: ${pedido.giro}
-            </div>
-          ` : ''}
-          
-          <table>
-            <thead><tr><th>Cant.</th><th>Producto</th><th>Total</th></tr></thead>
-            <tbody>
-              ${pedido.items.map(item => `
-                <tr>
-                  <td>${item.cantidad}</td>
-                  <td>${item.producto?.nombre}</td>
-                  <td>$${(item.precioUnitario * item.cantidad).toFixed(2)}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          
-          <div class="total">
-            Subtotal: $${pedido.subtotal.toFixed(2)}<br/>
-            Envío: $${pedido.costoEnvio.toFixed(2)}<br/>
-            ${pedido.descuento > 0 ? `Descuento: -$${pedido.descuento.toFixed(2)}<br/>` : ''}
-            TOTAL: $${pedido.total.toFixed(2)}
-          </div>
-
-          <div class="footer">
-            ¡Gracias por su preferencia!<br/>
-            www.kbcollection.com
-          </div>
-        </body>
-      </html>
-    `);
-    
-    ventana.document.close();
-    ventana.focus();
-    setTimeout(() => {
-        ventana.print();
-        ventana.close();
-    }, 500);
+  const getIconoEstado = (estado) => {
+      switch ((estado || "").toUpperCase()) {
+          case "PENDIENTE DE PAGO": return <FaClock style={{color: '#be123c'}} />; // Color BAC
+          case "PENDIENTE": return <FaClock />;
+          case "ENVIADO": return <FaShippingFast />;
+          case "ENTREGADO": return <FaCheckCircle />;
+          case "CANCELADO": return <FaTimesCircle />;
+          default: return <FaClock />;
+      }
   };
+
+  const getMapUrl = (coords) => {
+      if (!coords) return null;
+      let clean = String(coords).trim();
+      if (["0", "null", "undefined", "sin gps"].includes(clean.toLowerCase()) || clean.length < 5) return null;
+      if (clean.toLowerCase().startsWith("http")) return clean.replace(/^http:/, 'https:');
+      return `https://www.google.com/maps/search/?api=1&query=${clean}`;
+  };
+
+  function filtrarPedidos() {
+    return pedidos.filter(p => {
+        const estadoReal = (p.estado || "PENDIENTE").toUpperCase();
+        if (filtro !== "TODOS" && estadoReal !== filtro) return false;
+        
+        const fecha = (p.created_at || "").split('T')[0];
+        if (fechaInicio && fecha < fechaInicio) return false;
+        if (fechaFin && fecha > fechaFin) return false;
+
+        if (busqueda) {
+            const texto = busqueda.trim();
+            const id = (p.id || "").toString();
+            if (!id.includes(texto)) return false;
+        }
+        return true;
+    });
+  }
+
+  const lista = filtrarPedidos();
+  
+  // Cálculo de subtotal de productos (antes de envío y descuento)
+  const subtotalProductos = detalle ? (detalle.items_relacion || []).reduce((acc, item) => 
+    acc + (Number(item.precio_unitario) * item.cantidad), 0) : 0;
 
   return (
     <div className="admin-pedidos">
-      <h2>📦 Gestión de pedidos</h2>
-
-      {/* BARRA DE FILTROS */}
+      <h2><FaBox style={{marginRight: '10px'}}/> Gestión de Pedidos</h2>
+      
       <div className="pedidos-filtros">
-        
-        {/* Filtro Estado */}
-        <select value={filtro} onChange={(e) => setFiltro(e.target.value)}>
+        <select value={filtro} onChange={(e) => setFiltro(e.target.value)} className="filtro-select">
           <option value="TODOS">Todos los Estados</option>
-          <option value="PENDIENTE">Pendientes</option>
+          <option value="PENDIENTE DE PAGO">⏳ Esperando Pago BAC</option>
+          <option value="PENDIENTE">Pendientes (Pagados)</option>
           <option value="ENVIADO">Enviados</option>
           <option value="ENTREGADO">Entregados</option>
           <option value="CANCELADO">Cancelados</option>
         </select>
-
-        {/* Filtro Fechas */}
-        <div style={{display:'flex', alignItems:'center', gap:'5px', background:'#020617', padding:'5px 10px', borderRadius:'20px', border:'1px solid #334155'}}>
-            <FaCalendarAlt style={{color:'#94a3b8'}}/>
-            <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} style={{background:'transparent', border:'none', color:'white', fontSize:'0.85rem'}} />
-            <span style={{color:'#94a3b8'}}>-</span>
-            <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} style={{background:'transparent', border:'none', color:'white', fontSize:'0.85rem'}} />
+        
+        <div className="filtro-fechas">
+            <input type="date" value={fechaInicio} onChange={e=>setFechaInicio(e.target.value)} />
+            <span>a</span>
+            <input type="date" value={fechaFin} onChange={e=>setFechaFin(e.target.value)} />
         </div>
 
-        {/* Buscador Texto */}
         <div className="buscador">
-          <FaSearch />
-          <input
-            type="text"
-            placeholder="Buscar por ID o cliente"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-          />
+            <FaSearch className="icon-search"/>
+            <input type="text" placeholder="Buscar ID..." value={busqueda} onChange={e=>setBusqueda(e.target.value)}/>
         </div>
       </div>
 
-      {/* TABLA DE PEDIDOS */}
-      <table className="tabla-pedidos">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Cliente</th>
-            <th>Total</th>
-            <th>Estado</th>
-            <th>Fecha</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
+      <div className="tabla-responsive">
+        <table className="tabla-pedidos">
+            <thead>
+                <tr>
+                    <th>ID</th><th>Cliente</th><th>Contacto</th><th>Total</th><th>Estado</th><th>Fecha</th><th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {lista.map(p => (
+                    <tr key={p.id} className={p.estado === 'Pendiente de Pago' ? 'fila-bac' : ''}>
+                        <td className="td-id">#{p.id}</td>
+                        <td className="td-cliente">
+                            <div className="cliente-nombre">{p.user?.nombre || "Invitado"}</div>
+                            <small className="cliente-zona">{p.departamento}</small>
+                        </td>
+                        <td>
+                            {p.telefono ? (
+                                <button className="btn-whatsapp-sm" onClick={() => enviarWhatsapp(p.telefono, p.user?.nombre)}>
+                                    <FaWhatsapp/> {p.telefono}
+                                </button>
+                            ) : <span style={{color:'#64748b'}}>--</span>}
+                        </td>
+                        <td className="td-total">
+                           <span className={p.estado === 'Pendiente de Pago' ? 'monto-bac' : ''}>
+                              ${Number(p.total).toFixed(2)}
+                           </span>
+                        </td>
+                        <td>
+                            <span className={`badge-pedido ${(p.estado || "PENDIENTE").replace(/\s/g, '-').toLowerCase()}`}>
+                                {getIconoEstado(p.estado)} <span style={{marginLeft:'4px'}}>{p.estado}</span>
+                            </span>
+                        </td>
+                        <td>{new Date(p.created_at).toLocaleDateString()}</td>
+                        <td className="td-acciones">
+                            <button onClick={() => verDetalle(p.id)} className="btn-ver" title="Ver Detalles">
+                                <FaBoxOpen/>
+                            </button>
+                            <select 
+                                className="select-estado-mini" 
+                                value={p.estado} 
+                                onChange={(e) => cambiarEstado(p.id, e.target.value)}
+                                style={p.estado === 'Pendiente de Pago' ? {borderColor: '#be123c', fontWeight: 'bold'} : {}}
+                            >
+                                <option value="PENDIENTE DE PAGO">Esperando Pago</option>
+                                <option value="PENDIENTE">Pagado / Listo</option>
+                                <option value="ENVIADO">Enviado</option>
+                                <option value="ENTREGADO">Entregado</option>
+                                <option value="CANCELADO">Cancelado</option>
+                            </select>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+      </div>
 
-        <tbody>
-          {listaFiltrada.length === 0 ? (
-            <tr>
-              <td colSpan="6" style={{ textAlign: "center", padding: "20px" }}>
-                No se encontraron pedidos.
-              </td>
-            </tr>
-          ) : (
-            listaFiltrada.map((p) => (
-              <tr key={p.id}>
-                <td>#{p.id}</td>
-                <td>{p.usuario?.nombre || "Cliente"}</td>
-                <td>${p.total ? p.total.toFixed(2) : "0.00"}</td>
-                <td>
-                  <span className={`badge-pedido estado-${p.status ? p.status.toLowerCase() : "pendiente"}`}>
-                    {p.status || "PENDIENTE"}
-                  </span>
-                </td>
-                <td>{p.fecha ? new Date(p.fecha).toLocaleDateString() : "-"}</td>
-                <td style={{display:'flex', gap:'5px', justifyContent:'center'}}>
-                  <button className="btn-ver" onClick={() => verDetalle(p.id)} title="Ver Detalle">
-                    Ver
-                  </button>
-
-                  {/* BOTÓN WHATSAPP RÁPIDO */}
-                  <button 
-                    onClick={() => enviarNotificacion(p)} 
-                    style={{background:'#22c55e', color:'white', border:'none', padding:'6px', borderRadius:'50%', cursor:'pointer', display:'flex'}}
-                    title="WhatsApp"
-                  >
-                    <FaWhatsapp />
-                  </button>
-
-                  <select
-                    className="select-estado"
-                    value={p.status || "PENDIENTE"}
-                    onChange={(e) => cambiarEstado(p.id, e.target.value)}
-                  >
-                    <option value="PENDIENTE">Pendiente</option>
-                    <option value="ENVIADO">Enviado</option>
-                    <option value="ENTREGADO">Entregado</option>
-                    <option value="CANCELADO">Cancelado</option>
-                  </select>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-
-      {/* MODAL CON DETALLE COMPLETO (GPS Y COSTOS) */}
       {detalle && (
-        <div className="modal-pedido">
-          <div className="modal-card">
-            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                <h3>Pedido #{detalle.id}</h3>
-                {/* BOTONES ACCIÓN EN MODAL */}
-                <div style={{display:'flex', gap:'10px'}}>
-                    <button onClick={() => imprimirPedido(detalle)} style={{background:'#64748b', color:'white', border:'none', padding:'5px 10px', borderRadius:'5px', cursor:'pointer', display:'flex', alignItems:'center', gap:'5px'}}>
-                        <FaPrint/> Imprimir
-                    </button>
-                    <button onClick={() => enviarNotificacion(detalle)} style={{background:'#22c55e', color:'white', border:'none', padding:'5px 10px', borderRadius:'5px', cursor:'pointer', display:'flex', alignItems:'center', gap:'5px'}}>
-                        <FaWhatsapp/> Notificar
-                    </button>
-                </div>
+        <div className="modal-overlay" onClick={() => setDetalle(null)}>
+          <div className="modal-content premium-modal" onClick={e => e.stopPropagation()}>
+            
+            <div className="premium-header">
+              <div className="header-info">
+                <div className="order-id-badge">PEDIDO #{detalle.id}</div>
+                <span className="order-date">
+                   {new Date(detalle.created_at).toLocaleDateString('es-SV', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+              <div className="header-actions">
+                 <span className={`status-pill ${detalle.estado.replace(/\s/g, '-').toLowerCase()}`}>
+                    {getIconoEstado(detalle.estado)} {detalle.estado}
+                 </span>
+                 <button onClick={() => setDetalle(null)} className="btn-close-premium"><FaTimes/></button>
+              </div>
             </div>
 
-            <div className="modal-grid">
-                {/* Columna Izquierda: Datos Cliente */}
-                <div className="info-col">
-                    <h4>👤 Cliente</h4>
-                    <p><strong>Nombre:</strong> {detalle.usuario?.nombre}</p>
-                    <p><strong>Email:</strong> {detalle.usuario?.email}</p>
-                    <p><strong>Teléfono:</strong> {detalle.telefono || detalle.usuario?.telefono || "N/A"}</p>
-                    <p><strong>ID Pago:</strong> <span style={{fontSize:'0.85rem', color:'#666'}}>{detalle.paypalOrderId || "Efectivo/Otro"}</span></p>
-                </div>
-                
-                {/* TIPO DE COMPROBANTE */}
-                <div style={{marginTop:'10px', padding:'10px', background:'#1e293b', borderRadius:'6px', borderLeft: detalle.tipoComprobante === "CREDITO_FISCAL" ? '4px solid #facc15' : '4px solid #38bdf8'}}>
-                    <p style={{color:'white', fontWeight:'bold', margin:'0 0 5px 0'}}>
-                        {detalle.tipoComprobante === "CREDITO_FISCAL" ? "🏢 CRÉDITO FISCAL" : "👤 CONSUMIDOR FINAL"}
-                    </p>
-                    
-                    {detalle.tipoComprobante === "CREDITO_FISCAL" && (
-                        <div style={{fontSize:'0.85rem', color:'#cbd5e1'}}>
-                            <p style={{margin:'2px 0'}}><strong>Empresa:</strong> {detalle.razonSocial}</p>
-                            <p style={{margin:'2px 0'}}><strong>NIT:</strong> {detalle.documentoFiscal}</p>
-                            <p style={{margin:'2px 0'}}><strong>NRC:</strong> {detalle.nrc}</p>
-                            <p style={{margin:'2px 0'}}><strong>Giro:</strong> {detalle.giro}</p>
-                        </div>
-                    )}
-                </div>
+            <div className="premium-body">
+              <div className="info-grid-row">
+                  <div className="info-card">
+                      <div className="card-label"><FaUser/> Cliente</div>
+                      <div className="card-value main">{detalle.user?.nombre || "Invitado"}</div>
+                      <div className="sub-data">
+                          <div className="row"><span>Tel:</span> {detalle.telefono}</div>
+                          <div className="row"><span>Email:</span> {detalle.user?.email || "--"}</div>
+                      </div>
+                  </div>
 
-                {/* Columna Derecha: Datos Envío */}
-                <div className="info-col">
-                    <h4>📍 Envío</h4>
-                    <p><strong>Depto:</strong> {detalle.departamento || "No especificado"}</p>
-                    <div className="direccion-box">
-                        <strong>Dirección:</strong>
-                        <p>{detalle.direccion}</p>
-                    </div>
-                    
-                    {/* BOTÓN GPS */}
-                    {detalle.coordenadas ? (
-                        <a 
-                            href={detalle.coordenadas} 
-                            target="_blank" 
-                            rel="noreferrer" 
-                            className="btn-gps-link"
-                        >
-                            <FaMapMarkerAlt /> Ver en Mapa
-                        </a>
-                    ) : (
-                        <span className="no-gps">Sin ubicación GPS</span>
-                    )}
-                </div>
+                  <div className="info-card">
+                      <div className="card-label"><FaMapMarkerAlt/> Logística</div>
+                      <div className="card-value">{detalle.departamento}</div>
+                      <div className="sub-data address-box">
+                          {detalle.direccion_completa || "Sin dirección"}
+                      </div>
+                      {getMapUrl(detalle.coordenadas) && (
+                          <a href={getMapUrl(detalle.coordenadas)} target="_blank" rel="noopener noreferrer" className="btn-action-text blue">
+                              <FaMapMarkedAlt/> Abrir GPS
+                          </a>
+                      )}
+                  </div>
+
+                  <div className="info-card">
+                      <div className="card-label"><FaCreditCard/> Pago</div>
+                      <div className="card-value">{detalle.metodo_pago}</div>
+                      <div className="sub-data">
+                          <div className="row"><span>Tipo:</span> {detalle.tipo_comprobante?.replace('_', ' ')}</div>
+                          {detalle.codigo_cupon && <div className="row"><span>Cupón:</span> {detalle.codigo_cupon}</div>}
+                      </div>
+                  </div>
+              </div>
+
+              <div className="products-container">
+                  <h4 className="section-title"><FaBoxOpen/> Productos</h4>
+                  <table className="premium-table">
+                      <thead>
+                          <tr>
+                              <th>Producto</th><th className="th-center">Cant.</th><th className="th-right">Precio</th><th className="th-right">Subtotal</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          {(detalle.items_relacion || []).map((item, i) => (
+                              <tr key={i}>
+                                  <td>{item.product?.nombre || "N/A"}</td>
+                                  <td className="td-center">{item.cantidad}</td>
+                                  <td className="td-right">${Number(item.precio_unitario).toFixed(2)}</td>
+                                  <td className="td-right bold">${(item.cantidad * item.precio_unitario).toFixed(2)}</td>
+                              </tr>
+                          ))}
+                      </tbody>
+                  </table>
+              </div>
+
+              <div className="premium-footer">
+                   <div className="footer-actions">
+                        <select className="status-selector" value={detalle.estado} onChange={(e) => cambiarEstado(detalle.id, e.target.value)}>
+                           <option value="PENDIENTE DE PAGO">💳 ESPERANDO PAGO BAC</option>
+                           <option value="PENDIENTE">⏳ PENDIENTE (PAGADO)</option>
+                           <option value="ENVIADO">🚚 ENVIADO</option>
+                           <option value="ENTREGADO">✅ ENTREGADO</option>
+                           <option value="CANCELADO">❌ CANCELADO</option>
+                        </select>
+                        <button className="btn-print" onClick={() => window.print()}><FaPrint/></button>
+                   </div>
+
+                   <div className="footer-summary">
+                       <div className="sum-row"><span>Subtotal:</span> <span>${subtotalProductos.toFixed(2)}</span></div>
+                       <div className="sum-row"><span>Envío:</span> <span>+ ${Number(detalle.costo_envio).toFixed(2)}</span></div>
+                       
+                       {/* DESCUENTO REAL MOSTRADO AQUÍ */}
+                       {Number(detalle.descuento) > 0 && (
+                           <div className="sum-row discount" style={{color: '#e53e3e', fontWeight: 'bold'}}>
+                               <span>Descuento:</span> <span>- ${Number(detalle.descuento).toFixed(2)}</span>
+                           </div>
+                       )}
+                       
+                       <div className="sum-row total">
+                           <span>TOTAL</span>
+                           <span className="total-amount">${Number(detalle.total).toFixed(2)}</span>
+                       </div>
+                   </div>
+              </div>
             </div>
-
-            {/* Lista de Productos */}
-            <h4>🛒 Productos</h4>
-            <ul className="lista-productos-modal">
-              {detalle.items && detalle.items.map((item, index) => (
-                <li key={index}>
-                  <span>{item.producto?.nombre || "Producto"} <small>x{item.cantidad}</small></span>
-                  <span>${(item.precioUnitario * item.cantidad).toFixed(2)}</span>
-                </li>
-              ))}
-            </ul>
-
-            {/* Totales */}
-            <div className="modal-totales">
-                <div className="fila-total">
-                    <span>Subtotal:</span>
-                    <span>${(detalle.subtotal || 0).toFixed(2)}</span>
-                </div>
-                <div className="fila-total">
-                    <span>Envío:</span>
-                    <span>${(detalle.costoEnvio || 0).toFixed(2)}</span>
-                </div>
-                {detalle.descuento > 0 && (
-                    <div className="fila-total descuento">
-                        <span>Descuento:</span>
-                        <span>-${detalle.descuento.toFixed(2)}</span>
-                    </div>
-                )}
-                <div className="fila-total final">
-                    <span>Total:</span>
-                    <span>${(detalle.total || 0).toFixed(2)}</span>
-                </div>
-            </div>
-
-            <button className="btn-cerrar" onClick={() => setDetalle(null)}>
-              Cerrar
-            </button>
           </div>
         </div>
       )}

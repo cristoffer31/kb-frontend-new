@@ -1,8 +1,12 @@
 import api from "../../services/api";
 
 export async function listarUsuarios() {
-  const res = await api.get("/usuarios");
-  return res.data;
+  try {
+    const res = await api.get("/usuarios");
+    if (res.data.data) return res.data.data;
+    if (Array.isArray(res.data)) return res.data;
+    return [];
+  } catch (e) { return []; }
 }
 
 export async function alternarBloqueo(id) {
@@ -16,6 +20,8 @@ export async function cambiarRolUsuario(id, nuevoRol) {
 }
 
 export async function obtenerHistorialCompras(idUsuario) {
-  const res = await api.get(`/pedidos/usuario/${idUsuario}`);
-  return res.data;
+  try {
+    const res = await api.get(`/pedidos/usuario/${idUsuario}`);
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (e) { return []; }
 }

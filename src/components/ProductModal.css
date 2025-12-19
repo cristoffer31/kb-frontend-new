@@ -1,121 +1,187 @@
+/* --- FONDO DE PANTALLA --- */
 .modal-overlay {
   position: fixed; inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.75); /* Fondo negro neutro para mejor enfoque */
   display: flex; justify-content: center; align-items: center;
-  z-index: 10000; animation: fadeIn 0.2s ease-out;
-  backdrop-filter: blur(4px); /* Efecto borroso moderno de fondo */
+  z-index: 10000; 
+  animation: fadeIn 0.3s ease-out;
+  backdrop-filter: blur(5px);
 }
 
+/* --- TARJETA PRINCIPAL (SIN BORDES OSCUROS) --- */
 .modal-content {
-  background: white; width: 90%; max-width: 850px;
-  border-radius: 24px; overflow: hidden;
-  position: relative; display: flex; flex-direction: column;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+  background: white; /* FONDO BLANCO PURO */
+  width: 95%; max-width: 950px;
+  border-radius: 20px; 
+  overflow: hidden; /* Corta las esquinas de la imagen */
+  position: relative;
+  display: flex; flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  padding: 0; /* IMPORTANTE: ELIMINA EL BORDE GRUESO AZUL */
+  border: none; /* Asegura que no haya líneas */
 }
 
-.modal-body { display: grid; grid-template-columns: 1fr 1.3fr; }
+/* Layout de 2 columnas */
+.modal-body { 
+    display: grid; 
+    grid-template-columns: 1.1fr 1.4fr; 
+    min-height: 500px;
+    background: white; /* Asegura fondo continuo */
+}
 
+/* --- COLUMNA IZQUIERDA: IMAGEN --- */
 .modal-img-container {
-  background: #f8fafc; padding: 30px;
+  background: #f1f5f9; /* Gris muy suave, casi blanco */
+  padding: 40px;
   display: flex; align-items: center; justify-content: center;
   position: relative;
 }
-.modal-img-container img { width: 100%; max-height: 450px; object-fit: contain; mix-blend-mode: multiply;}
+
+.modal-img-container img { 
+  width: 100%; max-height: 400px; 
+  object-fit: contain; 
+  mix-blend-mode: multiply; 
+  filter: drop-shadow(0 15px 25px rgba(0,0,0,0.1));
+  transition: transform 0.3s ease;
+}
+.modal-img-container:hover img { transform: scale(1.03); }
+
 .badge-oferta {
-    position: absolute; top: 20px; left: 20px; background: #ef4444; color: white;
-    padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 0.8rem; letter-spacing: 1px;
+  position: absolute; top: 20px; left: 20px; 
+  background: #ef4444; color: white;
+  padding: 6px 12px; border-radius: 8px; 
+  font-weight: 700; font-size: 0.75rem; letter-spacing: 0.5px;
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
 }
 
-.modal-info { padding: 35px; display: flex; flex-direction: column; }
-.modal-info h2 { margin: 0 0 10px; color: #0f172a; font-size: 2rem; font-weight: 800;}
+/* --- COLUMNA DERECHA: INFORMACIÓN --- */
+.modal-info { 
+    padding: 40px 50px; 
+    display: flex; flex-direction: column; 
+    justify-content: center; 
+    background: white; 
+}
+
+/* Categoría sutil */
 .categoria-badge { 
-  display: inline-block; background: #e0f2fe; color: #0284c7; align-self: flex-start;
-  padding: 6px 14px; border-radius: 99px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase;
+  display: inline-flex; align-items: center;
+  color: #64748b; background: #f8fafc;
+  padding: 5px 10px; border-radius: 6px; 
+  font-size: 0.75rem; font-weight: 600; 
+  text-transform: uppercase; letter-spacing: 1px;
+  margin-bottom: 10px; border: 1px solid #e2e8f0;
 }
-.descripcion { color: #475569; margin: 20px 0; line-height: 1.7; font-size: 1rem; flex-grow: 1;}
 
-/* TABLA PRECIOS */
-.tabla-precios { background: #f1f5f9; padding: 18px; border-radius: 16px; margin-bottom: 25px; border: 1px solid #e2e8f0;}
-.tabla-precios h4 { margin: 0 0 12px; color: #334155; font-size: 0.95rem; font-weight: 700;}
-.tabla-precios ul { list-style: none; padding: 0; margin: 0;}
+/* Título limpio */
+.modal-info h2 { 
+  margin: 0 0 15px; 
+  color: #1e293b; 
+  font-size: 2.2rem; 
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+
+/* Descripción */
+.descripcion { 
+  color: #64748b; 
+  margin: 0 0 25px; 
+  line-height: 1.6; 
+  font-size: 1rem; 
+}
+
+/* --- TABLA DE PRECIOS (Suavizada) --- */
+.tabla-precios { 
+    background: white; 
+    padding: 0;
+    margin-bottom: 30px; 
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.tabla-precios h4 { 
+    margin: 0; padding: 12px 20px;
+    background: #f8fafc;
+    color: #475569; font-size: 0.8rem; font-weight: 700; 
+    text-transform: uppercase; letter-spacing: 1px;
+    border-bottom: 1px solid #e2e8f0;
+}
+.tabla-precios ul { list-style: none; padding: 10px 20px; margin: 0;}
 .tabla-precios li { 
   display: flex; justify-content: space-between; 
-  padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 0.95rem; color: #64748b;
+  padding: 8px 0; font-size: 0.95rem; color: #64748b;
 }
-.tabla-precios li:last-child { border-bottom: none; }
 .tabla-precios li.active-price { 
-  color: #16a34a; font-weight: 800; position: relative;
+  color: #10b981; font-weight: 700; 
 }
-.tabla-precios li.active-price span { font-size: 1.1rem; }
 
-/* --- NUEVOS CONTROLES MODERNOS --- */
-.compra-actions { border-top: 1px solid #e2e8f0; padding-top: 25px; }
+/* --- ACCIONES --- */
+.compra-actions { 
+    margin-top: auto; 
+    padding-top: 20px;
+    border-top: 1px dashed #e2e8f0; /* Línea separadora muy sutil */
+}
 
 .cantidad-control-modern { 
-    display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; 
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 20px;
 }
-.cantidad-control-modern label { font-weight: 600; color: #334155; font-size: 1.05rem;}
 
-/* Selector + / - */
+/* Selector Cantidad Minimalista */
 .qty-selector {
-    display: flex; align-items: center; background: #f1f5f9;
-    border-radius: 12px; overflow: hidden; border: 2px solid #e2e8f0;
+    display: flex; align-items: center; background: white;
+    border-radius: 8px; overflow: hidden; 
+    border: 1px solid #cbd5e1;
 }
 .qty-btn {
-    background: white; border: none; padding: 12px 18px;
-    color: #004aad; cursor: pointer; font-size: 1rem; display: flex; align-items: center;
-    transition: all 0.2s;
+    background: white; border: none; width: 40px; height: 40px;
+    color: #334155; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
 }
-.qty-btn:hover:not(:disabled) { background: #e0f2fe; }
-.qty-btn:active:not(:disabled) { background: #bae6fd; }
-.qty-btn:disabled { color: #cbd5e1; cursor: not-allowed; background: #f8fafc;}
-.qty-btn.minus { border-right: 1px solid #e2e8f0; }
-.qty-btn.plus { border-left: 1px solid #e2e8f0; }
-
+.qty-btn:hover:not(:disabled) { background: #f1f5f9; }
 .qty-value {
-    padding: 0 20px; font-weight: 800; font-size: 1.2rem; color: #0f172a; min-width: 50px; text-align: center;
+    width: 40px; text-align: center; font-weight: 700; font-size: 1.1rem; color: #0f172a;
 }
 
-/* Total y Botón */
-.precio-final-box { display: flex; flex-direction: column; margin-bottom: 20px; align-items: flex-end;}
-.precio-final-box span { font-size: 0.9rem; color: #64748b; font-weight: 600;}
-.gran-total { font-size: 2.2rem; color: #004aad; line-height: 1.2;}
-.ahorro-text { color: #16a34a; font-weight: 700; animation: pulse 1.5s infinite; font-size: 0.9rem;}
+/* Totales */
+.precio-final-box { display: flex; flex-direction: column; align-items: flex-end;}
+.precio-final-box span { font-size: 0.8rem; color: #94a3b8; font-weight: 600; text-transform: uppercase;}
+.gran-total { font-size: 2rem; color: #004aad; font-weight: 800; line-height: 1;}
 
+/* BOTÓN DE ACCIÓN */
 .btn-add-modal {
-  width: 100%; padding: 18px; border: none; border-radius: 14px;
-  background: linear-gradient(135deg, #0061ff, #004aad);
-  color: white; font-size: 1.1rem; font-weight: 800; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; gap: 12px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 10px 20px -10px rgba(0, 97, 255, 0.5);
+  width: 100%; padding: 16px; border: none; border-radius: 12px;
+  background: #004aad; /* Azul sólido elegante */
+  color: white; font-size: 1.1rem; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 74, 173, 0.25);
 }
-.btn-add-modal:hover { transform: translateY(-3px); box-shadow: 0 20px 30px -10px rgba(0, 97, 255, 0.6); }
-.btn-add-modal svg { font-size: 1.2rem; }
-
-/* --- ESTADO DE ÉXITO DEL BOTÓN --- */
-.btn-add-modal.success-state {
-    background: linear-gradient(135deg, #16a34a, #059669); /* Verde degradado */
-    box-shadow: 0 10px 20px -10px rgba(22, 163, 74, 0.5);
-    pointer-events: none; /* Evita más clicks */
+.btn-add-modal:hover:not(:disabled) { 
+    background: #003380; transform: translateY(-2px); 
+    box-shadow: 0 8px 16px rgba(0, 74, 173, 0.3);
 }
-/* -------------------------------- */
+.btn-add-modal:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; }
+.btn-add-modal.success-state { background: #10b981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
 
+/* BOTÓN CERRAR */
 .close-btn {
-  position: absolute; top: 20px; right: 20px; background: #f1f5f9; 
-  border: none; width: 40px; height: 40px; border-radius: 50%;
-  font-size: 1.2rem; color: #64748b; cursor: pointer; z-index: 5;
-  display: flex; align-items: center; justify-content: center; transition: 0.2s;
+  position: absolute; top: 15px; right: 15px; 
+  background: transparent; border: none;
+  width: 36px; height: 36px; border-radius: 50%;
+  font-size: 1.2rem; color: #94a3b8; cursor: pointer; z-index: 20;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
 }
-.close-btn:hover { background: #e2e8f0; color: #0f172a; transform: rotate(90deg); }
+.close-btn:hover { background: #f1f5f9; color: #ef4444; }
+button:focus { outline: none; } /* Quita el borde azul del navegador */
 
-@media (max-width: 850px) {
+/* RESPONSIVE */
+@media (max-width: 900px) {
   .modal-body { grid-template-columns: 1fr; }
-  .modal-img-container { height: 250px; padding: 20px;}
-  .modal-img-container img { max-height: 220px; }
-  .modal-info { padding: 25px; }
-  .cantidad-control-modern { flex-direction: column; align-items: flex-start; gap: 10px;}
-  .precio-final-box { align-items: flex-start; }
+  .modal-img-container { height: 280px; padding: 20px; }
+  .modal-info { padding: 30px; }
+  .modal-info h2 { font-size: 1.8rem; }
+  .cantidad-control-modern { flex-direction: column-reverse; align-items: stretch; gap: 15px;}
+  .precio-final-box { flex-direction: row; justify-content: space-between; align-items: center; width: 100%;}
 }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-@keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }

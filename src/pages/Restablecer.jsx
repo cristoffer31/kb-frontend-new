@@ -1,37 +1,77 @@
 import React, { useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import api from "../services/api";
-import "./Auth.css";
+import { FaExclamationCircle, FaCheckCircle, FaLock } from "react-icons/fa";
+import "./Login.css";
 
 export default function Restablecer() {
-  const [searchParams] = useSearchParams();
-  const token = searchParams.get("token");
+  const location = useLocation();
   const navigate = useNavigate();
+
+  // Capturamos los datos que vienen en la URL del correo
+  const query = new URLSearchParams(location.search);
+  const tokenFromUrl = query.get("token") || "";
+  const emailFromUrl = query.get("email") || "";
+
   const [password, setPassword] = useState("");
-  const [mensaje, setMensaje] = useState("");
+  const [password_confirmation, setPasswordConfirmation] = useState("");
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
+
     try {
-      await api.post("/auth/reset-password", { token, password });
-      setMensaje("✅ ¡Contraseña actualizada! Redirigiendo...");
-      setTimeout(() => navigate("/login"), 3000);
-    } catch (error) {
-      setMensaje("❌ El enlace ha expirado o es inválido.");
+      await api.post("/auth/restablecer", {
+        token: tokenFromUrl,
+        email: emailFromUrl,
+        password: password,
+        password_confirmation: password_confirmation,
+      });
+
+      alert("¡Contraseña restablecida correctamente!");
+      navigate("/login");
+    } catch (err) {
+      if (err.response && err.response.status === 422) {
+        const validationErrors = err.response.data.errors;
+        setError(Object.values(validationErrors).flat()[0]);
+      } else {
+        setError(err.response?.data?.message || "Error al procesar la solicitud.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (!token) return <div className="auth-page"><div className="auth-card"><p>Enlace no válido.</p></div></div>;
-
   return (
-    <div className="auth-page">
-      <div className="auth-card">
+    <div className="login-container">
+      <div className="login-box">
         <h2>Nueva Contraseña</h2>
-        <p>Ingresa tu nueva clave segura.</p>
-        {mensaje && <div className="auth-ok">{mensaje}</div>}
-        <form onSubmit={handleSubmit} className="auth-form">
-          <input type="password" placeholder="Nueva contraseña" value={password} onChange={e => setPassword(e.target.value)} required minLength={6}/>
-          <button className="auth-btn">Cambiar contraseña</button>
+        <p className="subtitle">Establece tu nueva clave para <b>{emailFromUrl}</b></p>
+
+        {error && <div className="error-msg"><FaExclamationCircle /> {error}</div>}
+        
+        <form onSubmit={handleSubmit}>
+          <input
+            type="password"
+            placeholder="Nueva contraseña (mín. 8 caracteres)"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength="8"
+          />
+          <input
+            type="password"
+            placeholder="Confirmar contraseña"
+            value={password_confirmation}
+            onChange={(e) => setPasswordConfirmation(e.target.value)}
+            required
+          />
+          <button type="submit" disabled={loading}>
+            {loading ? "Guardando..." : "Restablecer Contraseña"}
+          </button>
         </form>
       </div>
     </div>

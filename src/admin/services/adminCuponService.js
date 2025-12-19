@@ -1,24 +1,28 @@
 import api from "../../services/api";
 
-// LISTAR TODOS
-export async function listarCupones() {
-  const res = await api.get("/cupones");
-  return res.data;
+// Cambiado de listarCupones a adminListarCupones
+export async function adminListarCupones() {
+  try {
+    const res = await api.get("/cupones");
+    if (res.data.data) return res.data.data;
+    if (Array.isArray(res.data)) return res.data;
+    return [];
+  } catch (e) { return []; }
 }
 
-// CREAR
-export async function crearCupon(data) {
+// Cambiado de crearCupon a adminCrearCupon
+export async function adminCrearCupon(data) {
   const res = await api.post("/cupones", data);
   return res.data;
 }
 
-// ACTIVAR / DESACTIVAR
-export async function alternarEstadoCupon(id) {
+// Esta no la usa el componente actual, pero la renombramos por consistencia
+export async function adminAlternarEstadoCupon(id) {
   const res = await api.put(`/cupones/${id}/toggle`);
   return res.data;
 }
 
-// ELIMINAR
-export async function eliminarCupon(id) {
+// Cambiado de eliminarCupon a adminEliminarCupon
+export async function adminEliminarCupon(id) {
   return api.delete(`/cupones/${id}`);
 }

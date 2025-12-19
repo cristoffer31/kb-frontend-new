@@ -52,7 +52,7 @@
 .filtros select {
   padding: 8px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  border: 1px solid rgba(184, 195, 210, 0.35);
   background: #020617;
   font-size: 14px;
   min-width: 190px;
@@ -65,7 +65,7 @@
   align-items: center;
   gap: 6px;
   background: rgba(37, 99, 235, 0.18);
-  color: #e5e7eb;
+  color: #3472ef;
   border: 1px solid rgba(59, 130, 246, 0.5);
   padding: 8px 14px;
   border-radius: 999px;
@@ -119,7 +119,7 @@
 }
 
 .inventario-tabla th {
-  color: #e5e7eb;
+  color: #ffffff;
   padding: 10px 10px;
   text-align: left;
   font-size: 13px;

@@ -75,7 +75,7 @@ export default function AdminZonas() {
             <div key={z.id} className="zona-card">
                 <div className="zona-header">
                     <h4>{z.departamento}</h4>
-                    <span className="zona-precio">${z.tarifa.toFixed(2)}</span>
+                    <span className="zona-precio">${Number(z.tarifa).toFixed(2)}</span>
                 </div>
                 <p className="zona-lista">{z.municipios}</p>
                 <div className="zona-actions">

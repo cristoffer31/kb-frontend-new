@@ -1,74 +1,110 @@
-// src/pages/Login.jsx
-import React, { useState, useContext } from "react";
-import "./Auth.css";
+import React, { useState, useEffect, useContext } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { useNavigate, Link } from "react-router-dom";
+import { FaEnvelope, FaLock, FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
+import "./Login.css";
 
 export default function Login() {
-  const { login } = useContext(AuthContext);
+  const { login } = useContext(AuthContext); // Esta función debe guardar el token en localStorage
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null);
+  const [successMsg, setSuccessMsg] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e) {
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    if (queryParams.get("verified") === "1") {
+      setSuccessMsg("¡Cuenta verificada con éxito! Ya puedes iniciar sesión.");
+      window.history.replaceState({}, document.title, "/login");
+    }
+  }, [location]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    setError(null);
+    setSuccessMsg(null); // Limpiamos mensajes anteriores
+    setLoading(true);
 
     try {
-      await login(email, password);
-      navigate("/");
-    } catch (err) {
-      console.error(err);
-      
-      if (err.response && err.response.data && err.response.data.error) {
-        setError(err.response.data.error);
-      } else {
-        setError("Error al iniciar sesión. Intenta de nuevo.");
+      // 1. Llamamos a la función login del contexto
+      const res = await login(email, password);
+
+      // 2. Si llegamos aquí, el login fue exitoso. 
+      // Verificamos que tengamos la respuesta necesaria.
+      if (res && res.usuario) {
+        setSuccessMsg("Acceso concedido. Redirigiendo...");
+        
+        // 3. Redirección inmediata según el rol
+        if (res.usuario.role === "ADMIN" || res.usuario.role === "SUPER_ADMIN") {
+          navigate("/admin/stats");
+        } else {
+          navigate("/");
+        }
       }
+    } catch (err) {
+      // 4. Manejo de errores específico
+      console.error("Error detallado:", err);
+
+      if (err.response?.status === 403) {
+        setError("Tu cuenta aún no ha sido verificada. Revisa tu correo.");
+      } else if (err.response?.status === 401) {
+        setError("Correo o contraseña incorrectos.");
+      } else {
+        setError("Hubo un problema al conectar con el servidor.");
+      }
+    } finally {
+      setLoading(false);
     }
-  } 
+  };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <h2>Iniciar sesión</h2>
-        <p>Ingresa con tu cuenta de KB COLLECTION</p>
+    <div className="login-container">
+      <div className="login-box">
+        <h2>Iniciar Sesión</h2>
+        <p className="subtitle">Bienvenido a KB Collection</p>
 
-        {error && <div className="auth-error">{error}</div>}
+        {successMsg && (
+          <div className="error-msg success-msg">
+            <FaCheckCircle /> {successMsg}
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit} className="auth-form">
+        {error && (
+          <div className="error-msg">
+            <FaExclamationCircle /> {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
           <input
             type="email"
             placeholder="Correo electrónico"
-            autoComplete="email"
-            required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            required
           />
-
           <input
             type="password"
             placeholder="Contraseña"
-            autoComplete="current-password"
-            required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
           />
-
-          <button type="submit" className="auth-btn">
-            Entrar
+          <button type="submit" disabled={loading}>
+            {loading ? "Verificando..." : "Entrar"}
           </button>
         </form>
-        
-        <div style={{marginTop:'15px', textAlign:'center', fontSize:'0.9rem'}}>
-           <Link to="/recuperar" style={{color:'#64748b', textDecoration:'none'}}>¿Olvidaste tu contraseña?</Link>
-        </div>
 
-        <p className="auth-footer-text">
-          ¿No tienes cuenta? <Link to="/register">Regístrate aquí</Link>
-        </p>
+        <div className="login-footer">
+          <p>¿No tienes cuenta? <span onClick={() => navigate("/register")}>Regístrate aquí</span></p>
+          <p className="forgot-pass" onClick={() => navigate("/auth/recuperar")}>Olvidé mi contraseña</p>
+        </div>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./AdminInventario.css";
-import { listarProductos } from "../services/productoService";
+import { listarProductos } from "../services/productoService"; // Asegúrate que este servicio apunte a /api/productos
 import { listarCategorias } from "./services/adminCategoriaService";
 import { FaSearch, FaSortAmountDown, FaSortAmountUp } from "react-icons/fa";
 import * as XLSX from "xlsx";
@@ -15,30 +15,55 @@ export default function AdminInventario() {
   const [ordenPrecio, setOrdenPrecio] = useState(null);
   const [ordenStock, setOrdenStock] = useState(null);
 
+  // Carga inicial
   useEffect(() => {
-    listarCategorias().then(data => setCategorias(Array.isArray(data) ? data : []));
+    listarCategorias().then(data => {
+        // Validación extra por si Laravel devuelve objeto en vez de array
+        setCategorias(Array.isArray(data) ? data : []);
+    });
     filtrar();
   }, []);
 
+  // Función principal de filtrado y carga
   async function filtrar() {
     try {
         const respuesta = await listarProductos();
-        let data = respuesta.content || (Array.isArray(respuesta) ? respuesta : []);
-        if (!Array.isArray(data)) data = [];
+        
+        // --- CORRECCIÓN CLAVE PARA LARAVEL ---
+        // 1. Intentamos obtener el array de productos buscando en todas las ubicaciones posibles
+        let data = [];
+        
+        if (Array.isArray(respuesta)) {
+            data = respuesta;
+        } else if (respuesta.data && Array.isArray(respuesta.data)) {
+            // Caso Laravel Paginado
+            data = respuesta.data;
+        } else if (respuesta.content && Array.isArray(respuesta.content)) {
+            // Caso Legacy / Quarkus
+            data = respuesta.content;
+        } else if (respuesta.data) {
+             // Caso Axios directo
+             data = Array.isArray(respuesta.data) ? respuesta.data : [];
+        }
 
         if (busqueda.trim() !== "") {
             const term = busqueda.toLowerCase();
             data = data.filter((p) => {
                 const nombre = (p.nombre || "").toLowerCase();
-                const codigo = (p.codigoBarras || "").toLowerCase();
-                const agrupador = (p.codigoAgrupador || "").toLowerCase();
+                // Buscamos camelCase O snake_case
+                const codigo = (p.codigoBarras || p.codigo_barras || "").toLowerCase();
+                const agrupador = (p.codigoAgrupador || p.codigo_agrupador || "").toLowerCase();
                 
                 return nombre.includes(term) || codigo.includes(term) || agrupador.includes(term);
             });
         }
 
         if (categoria !== "") {
-            data = data.filter((p) => p.category?.id === parseInt(categoria));
+            data = data.filter((p) => {
+                // Laravel devuelve la relación como 'categoria', el front antiguo buscaba 'category'
+                const catId = p.categoria_id || p.categoryId || (p.categoria?.id) || (p.category?.id);
+                return catId === parseInt(categoria);
+            });
         }
 
         if (ordenPrecio) {
@@ -60,20 +85,24 @@ export default function AdminInventario() {
     }
   }
 
+  // Re-ejecutar filtros cuando cambien los inputs
   useEffect(() => { filtrar(); }, [busqueda, categoria, ordenPrecio, ordenStock]);
 
   function exportarExcel() {
     if (productos.length === 0) return;
+    
     const data = productos.map((p) => ({
       ID: p.id, 
       Nombre: p.nombre || "Sin nombre", 
       Variante: `${p.talla || ""} ${p.variante || ""}`.trim(),
-      Agrupador: p.codigoAgrupador || "-",
-      Codigo: p.codigoBarras || "-",
-      Categoría: p.category?.nombre || "N/A", 
+      // Mapeo seguro para Excel
+      Agrupador: p.codigoAgrupador || p.codigo_agrupador || "-",
+      Codigo: p.codigoBarras || p.codigo_barras || "-",
+      Categoría: p.categoria?.nombre || p.category?.nombre || "N/A", 
       Precio: p.precio, 
       Stock: p.stock,
     }));
+
     const hoja = XLSX.utils.json_to_sheet(data);
     const libro = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(libro, hoja, "Inventario");
@@ -133,7 +162,10 @@ export default function AdminInventario() {
             {productos.map((p) => (
               <tr key={p.id}>
                 <td>{p.id}</td>
-                <td><img src={p.imagenUrl || "/placeholder.png"} className="img-mini" alt="p" /></td>
+                <td>
+                    {/* Buscamos imagenUrl (alias) o imagen (BD) */}
+                    <img src={p.imagenUrl || p.imagen || "/placeholder.png"} className="img-mini" alt="p" />
+                </td>
                 <td>{p.nombre || "Sin Nombre"}</td>
                 
                 <td>
@@ -143,11 +175,15 @@ export default function AdminInventario() {
                 </td>
 
                 <td style={{fontSize:'0.85rem', color:'#64748b'}}>
-                    {p.codigoAgrupador || "-"}
+                    {/* Soporte para snake_case */}
+                    {p.codigoAgrupador || p.codigo_agrupador || "-"}
                 </td>
 
-                <td>{p.codigoBarras || "-"}</td>
-                <td>{p.category?.nombre || "N/A"}</td>
+                <td>{p.codigoBarras || p.codigo_barras || "-"}</td>
+                
+                {/* Soporte para relación 'categoria' (Laravel) o 'category' (Legacy) */}
+                <td>{p.categoria?.nombre || p.category?.nombre || "N/A"}</td>
+                
                 <td>${Number(p.precio || 0).toFixed(2)}</td>
                 
                 <td style={{fontWeight:'bold', color: p.stock < 10 ? '#ef4444' : '#10b981'}}>
@@ -155,6 +191,14 @@ export default function AdminInventario() {
                 </td>
               </tr>
             ))}
+            
+            {productos.length === 0 && (
+                <tr>
+                    <td colSpan="9" style={{textAlign: "center", padding: "20px"}}>
+                        No se encontraron productos.
+                    </td>
+                </tr>
+            )}
           </tbody>
         </table>
       </div>

@@ -17,18 +17,18 @@ function Navbar() {
   
   // Estado menú usuario
   const [showUserMenu, setShowUserMenu] = useState(false);
-  // Ref para controlar el tiempo de cierre
+  
+  // Refs
   const closeTimeoutRef = useRef(null);
+  const searchRef = useRef(null);
+  const userMenuRef = useRef(null); // Nuevo ref para click outside del menú usuario
 
   const navigate = useNavigate();
   const { usuario, isLogged, isAdmin, logout } = useContext(AuthContext);
-  const { totalItems } = useContext(CarritoContext);
+  const { cantidadTotal } = useContext(CarritoContext); // Usamos cantidadTotal (nombre correcto del nuevo contexto)
   
-  const searchRef = useRef(null);
-
-  // --- FUNCIONES PARA EL MENÚ FLOTANTE (FIX) ---
+  // --- CONTROL DEL MENÚ FLOTANTE ---
   const handleMenuEnter = () => {
-    // Si había un cierre pendiente, lo cancelamos porque el usuario volvió
     if (closeTimeoutRef.current) {
         clearTimeout(closeTimeoutRef.current);
     }
@@ -36,20 +36,31 @@ function Navbar() {
   };
 
   const handleMenuLeave = () => {
-    // Esperamos un poco antes de cerrar para dar tiempo a mover el mouse
     closeTimeoutRef.current = setTimeout(() => {
         setShowUserMenu(false);
-    }, 300); // 300ms de gracia
+    }, 300); 
   };
+
+  // Cerrar menú si clickean fuera (útil en móvil)
+  useEffect(() => {
+    function handleClickOutsideMenu(event) {
+        if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+            setShowUserMenu(false);
+        }
+    }
+    document.addEventListener("mousedown", handleClickOutsideMenu);
+    return () => document.removeEventListener("mousedown", handleClickOutsideMenu);
+  }, []);
   // ---------------------------------------------
 
-  // --- BUSCADOR ---
+  // --- BUSCADOR INTELIGENTE ---
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
       if (search.trim().length > 1) {
         try {
           const resultados = await buscarProductos(search);
-          const lista = resultados.content || (Array.isArray(resultados) ? resultados : []);
+          // Normalización para Laravel
+          const lista = resultados.data || (Array.isArray(resultados) ? resultados : []);
           setSugerencias(lista.slice(0, 5)); 
           setMostrarSugerencias(true);
         } catch (error) { setSugerencias([]); }
@@ -61,26 +72,33 @@ function Navbar() {
     return () => clearTimeout(delayDebounceFn);
   }, [search]);
 
+  // Cerrar sugerencias al clickear fuera
   useEffect(() => {
-    function handleClickOutside(event) {
+    function handleClickOutsideSearch(event) {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setMostrarSugerencias(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutsideSearch);
+    return () => document.removeEventListener("mousedown", handleClickOutsideSearch);
   }, []);
 
   const handleSearch = () => {
     if (search.trim()) {
       navigate(`/productos?buscar=${encodeURIComponent(search)}`);
-      setOpen(false); setMostrarSugerencias(false);
+      setOpen(false); 
+      setMostrarSugerencias(false);
+      setSearch(""); // Limpiar búsqueda opcional
     }
   };
+
   const handleKeyDown = (e) => { if (e.key === "Enter") handleSearch(); };
+  
   const irAProducto = (id) => {
     navigate(`/producto/${id}`);
-    setSearch(""); setMostrarSugerencias(false); setOpen(false);
+    setSearch(""); 
+    setMostrarSugerencias(false); 
+    setOpen(false);
   };
 
   return (
@@ -94,6 +112,7 @@ function Navbar() {
           <img src="/kb_logo_M.png" alt="KB Collection" className="navbar-logo-img" />
         </Link>
 
+        {/* BUSCADOR */}
         <div className="navbar-search" ref={searchRef}>
           <div className="search-wrapper">
             <input
@@ -111,7 +130,7 @@ function Navbar() {
             <div className="sugerencias-box">
                 {sugerencias.map((prod) => (
                     <div key={prod.id} className="sugerencia-item" onClick={() => irAProducto(prod.id)}>
-                        <img src={prod.imagenUrl || "/placeholder.png"} alt={prod.nombre} />
+                        <img src={prod.imagenUrl || prod.imagen || "/placeholder.png"} alt={prod.nombre} />
                         <div className="sugerencia-info">
                             <span className="s-nombre">{prod.nombre}</span>
                             <span className="s-precio">${Number(prod.precio).toFixed(2)}</span>
@@ -123,6 +142,7 @@ function Navbar() {
           )}
         </div>
 
+        {/* MENÚ MÓVIL / DESKTOP */}
         <div className={`navbar-links ${open ? "active" : ""}`}>
           <Link to="/" onClick={() => setOpen(false)}>Inicio</Link>
           <Link to="/productos" onClick={() => setOpen(false)}>Tienda</Link>
@@ -134,7 +154,7 @@ function Navbar() {
         <div className="navbar-icons">
           <Link to="/carrito" className="icon-btn cart-icon">
             <FaShoppingCart />
-            {totalItems > 0 && <span className="badge">{totalItems}</span>}
+            {cantidadTotal > 0 && <span className="badge">{cantidadTotal}</span>}
           </Link>
 
           {!isLogged ? (
@@ -142,11 +162,13 @@ function Navbar() {
                 <FaUser /> Iniciar Sesión
             </Link>
           ) : (
-            // --- MENÚ CON RETARDO ---
+            // MENÚ USUARIO DESPLEGABLE
             <div 
                 className="user-dropdown-container" 
+                ref={userMenuRef}
                 onMouseEnter={handleMenuEnter} 
                 onMouseLeave={handleMenuLeave}
+                onClick={() => setShowUserMenu(!showUserMenu)} // Click para móvil
             >
               <button className="user-btn-trigger">
                   <FaUserCircle className="avatar-icon"/>
@@ -171,13 +193,12 @@ function Navbar() {
                       
                       <div className="dropdown-divider"></div>
                       
-                      <button className="dropdown-item logout" onClick={logout}>
+                      <button className="dropdown-item logout" onClick={() => { logout(); setShowUserMenu(false); }}>
                           <FaSignOutAlt /> Cerrar Sesión
                       </button>
                   </div>
               )}
             </div>
-            // -----------------------
           )}
 
           <button className="hamburger" onClick={() => setOpen(!open)}>

@@ -1,143 +1,269 @@
 /* =========================================
-   HOME GENERAL
+   GENERAL & LAYOUT
 ========================================= */
-.home-wrapper { width: 100%; display: flex; flex-direction: column; background: #f8fafc; }
-.container { width: 100%; max-width: 96%; margin: 0 auto; padding: 0 20px; }
-section { margin-bottom: 60px; }
+.home-wrapper {
+  width: 100%;
+  background-color: #fdfdfd;
+  overflow-x: hidden;
+}
 
-/* Títulos de Sección */
-.section-title-center {
-  text-align: center; font-size: 2rem; font-weight: 800;
-  color: #1e293b; margin-bottom: 10px;
+.container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
-.section-subtitle {
-  text-align: center; color: #64748b; margin-bottom: 40px; font-size: 1.05rem;
+
+section {
+  padding: 50px 0;
+  margin-bottom: 20px;
 }
-.section-header-flex {
-  display: flex; justify-content: space-between; align-items: flex-end;
-  margin-bottom: 30px; padding-bottom: 15px; border-bottom: 2px solid #e2e8f0;
-}
-.section-header-flex h2 { margin: 0; font-size: 1.8rem; color: #0f172a; }
-.link-ver-todo {
-  color: #004aad; font-weight: 700; cursor: pointer; background: none; border: none;
-  font-size: 1rem; transition: 0.2s;
-}
-.link-ver-todo:hover { transform: translateX(5px); color: #0061ff; }
 
 /* =========================================
-   1. HERO (Portada Principal)
+   1. HERO SECTION
 ========================================= */
 .home-hero {
-  width: 100%;
- background: linear-gradient(90deg, #0094ff 0%, #2563eb 100%);
-  padding: 80px 0; color: white; margin-bottom: 40px; /* Menos margen abajo */
-  position: relative; overflow: hidden;
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  padding: 90px 0;
+  color: white;
+  position: relative;
 }
-/* Decoración de fondo sutil */
-.home-hero::after {
-    content: ""; position: absolute; right: -10%; top: -20%;
-    width: 600px; height: 600px;
-    background: radial-gradient(circle, rgba(56, 189, 248, 0.1), transparent 60%);
-    border-radius: 50%; pointer-events: none;
-}
-.home-hero-inner {
-  display: grid; grid-template-columns: 1fr 1fr;
-  align-items: center; gap: 60px; position: relative; z-index: 2;
-}
-.home-hero-left h1 { font-size: 3.8rem; font-weight: 800; line-height: 1.1; margin: 20px 0; }
-.hero-highlight {
-    background: linear-gradient(to right, #38bdf8, #818cf8);
-    background-clip: text;
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-}
-.home-hero-left p { font-size: 1.15rem; opacity: 0.9; margin-bottom: 35px; max-width: 500px; line-height: 1.6; }
-.btn-primary {
-    background: linear-gradient(135deg, #0061ff 0%, #004aad 100%); color: white;
-    border: none; border-radius: 12px; font-weight: 700; cursor: pointer;
-    transition: 0.3s; box-shadow: 0 4px 15px rgba(0, 97, 255, 0.3);
-}
-.btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0, 97, 255, 0.4); }
 
-/* Tarjetas informativas derecha */
-.hero-info-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.info-card {
-  background: rgba(255,255,255,0.08); backdrop-filter: blur(10px);
-  padding: 25px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);
+.home-hero-inner {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  align-items: center;
+  gap: 40px;
+}
+
+.hero-logo-img {
+  max-width: 420px;
+  width: 100%;
+  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));
+  margin-bottom: 25px;
+}
+
+.hero-text {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  opacity: 0.95;
+  margin-bottom: 35px;
+  max-width: 550px;
+}
+
+.btn-primary-hero {
+  padding: 16px 40px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  background: white;
+  color: #007bff;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.btn-primary-hero:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+  background: #f8f9fa;
+}
+
+.hero-info-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 15px;
+}
+
+.info-item {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.info-icon { font-size: 1.8rem; color: #a5d8ff; }
+.info-item h3 { font-size: 1.05rem; margin: 0; color: white; }
+.info-item p { font-size: 0.85rem; margin: 0; opacity: 0.8; }
+
+/* =========================================
+   2. CATEGORÍAS (DISEÑO MEJORADO)
+========================================= */
+.categories-section {
+  text-align: center;
+  padding: 80px 0;
+}
+
+.section-title-modern {
+  font-size: 2.3rem;
+  font-weight: 800;
+  color: #1a202c;
+  margin-bottom: 10px;
+}
+
+.title-underline {
+  width: 70px;
+  height: 5px;
+  background: #007bff;
+  margin: 0 auto 50px;
+  border-radius: 10px;
+}
+
+.categories-grid {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 45px;
+}
+
+.category-item-modern {
+  width: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.category-image-wrapper {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: white;
+  margin-bottom: 15px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  border: 3px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.category-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.category-icon-placeholder {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #007bff;
+  background: #e7f3ff;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.category-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #4a5568;
+}
+
+.category-item-modern:hover {
+  transform: translateY(-10px);
+}
+
+.category-item-modern:hover .category-image-wrapper {
+  border-color: #007bff;
+  box-shadow: 0 15px 35px rgba(0, 123, 255, 0.15);
+}
+
+/* =========================================
+   3. OFERTAS RELÁMPAGO (DISEÑO PRO)
+========================================= */
+.ofertas-container-pro {
+  background: linear-gradient(135deg, #fff5f5 0%, #fff0f0 100%);
+  border-radius: 30px;
+  padding: 50px;
+  border: 1px solid #ffe3e3;
+  text-align: center;
+}
+
+.ofertas-title {
+  color: #e03131;
+  font-size: 2.2rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.fire-icon-anim {
+  color: #ff922b;
+  animation: firePulse 1.5s infinite;
+}
+
+@keyframes firePulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+.product-grid-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+}
+
+/* =========================================
+   4. LO MÁS VENDIDO
+========================================= */
+.section-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+  border-bottom: 2px solid #f1f5f9;
+  padding-bottom: 15px;
+}
+
+.trending-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.star-icon { color: #fcc419; }
+
+.btn-view-all {
+  background: transparent;
+  border: none;
+  color: #007bff;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
   transition: 0.3s;
 }
-.info-card:hover { background: rgba(255,255,255,0.15); transform: translateY(-5px); }
-.info-card h3 { font-size: 1.1rem; margin-bottom: 8px; color: #93c5fd; }
-.info-card p { font-size: 0.9rem; color: #cbd5e1; margin: 0; }
 
-/* =========================================
-   2. CATEGORÍAS (Fila Horizontal Debajo del Hero)
-========================================= */
-.categories-section { padding: 20px 0 40px; } /* Ajuste de padding */
-.categories-grid {
-  display: flex; gap: 20px; overflow-x: auto; padding: 10px 5px;
-  justify-content: flex-start;
-  scrollbar-width: none; /* Firefox */ -ms-overflow-style: none; /* IE */
-}
-.categories-grid::-webkit-scrollbar { display: none; /* Chrome/Safari */ }
-
-.category-card-modern {
-  min-width: 200px; flex: 0 0 auto; /* Tamaño fijo, no encoger */
-  background: white; border: 1px solid #e2e8f0; border-radius: 16px;
-  padding: 20px; text-align: center; cursor: pointer; transition: 0.3s all ease;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-}
-.category-card-modern:hover {
-  transform: translateY(-5px); border-color: #3b82f6;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-}
-.cat-icon-modern {
-  width: 55px; height: 55px; margin: 0 auto 15px;
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-  color: #2563eb; border-radius: 50%; display: flex; align-items: center;
-  justify-content: center; font-size: 1.6rem; font-weight: 800; transition: 0.3s;
-}
-.category-card-modern:hover .cat-icon-modern {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white;
-}
-.category-card-modern h3 { font-size: 1rem; color: #334155; margin: 0; font-weight: 600; }
-
-/* =========================================
-   3. OFERTAS RELÁMPAGO (Diseño Destacado PRO)
-========================================= */
-.ofertas-section-pro {
-    background: linear-gradient(to bottom, #fff1f2, #ffe4e6); /* Fondo rojizo suave */
-    border-radius: 24px;
-    padding: 40px;
-    border: 2px solid #fecdd3;
-    position: relative; overflow: hidden;
-}
-/* Icono de fuego animado */
-.fire-icon-anim { animation: pulseFire 1.5s infinite ease-in-out; }
-@keyframes pulseFire { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
-
-/* GRID DE PRODUCTOS NORMALES (Esta es la clave para que no se vean gigantes) */
-.product-grid-normal {
-    display: grid;
-    /* Crea columnas automáticas de mín 240px de ancho */
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 30px;
-    margin-top: 40px;
-}
-
-/* =========================================
-   4. LO MÁS VENDIDO (Grid Estándar)
-========================================= */
-.mas-vendido-section { padding: 20px 0; }
+.btn-view-all:hover { color: #0056b3; transform: translateX(5px); }
 
 /* =========================================
    RESPONSIVE
 ========================================= */
-@media (max-width: 900px) {
-  /* En móvil regresamos a márgenes normales para que no se pegue al borde */
-  .container { width: 95%; padding: 0 15px; } 
-  .home-hero-inner { grid-template-columns: 1fr; text-align: center; gap: 40px; }
-  .hero-actions { justify-content: center; }
-  .hero-info-cards { display: none; }
-  .ofertas-section-pro { padding: 25px 15px; }
-  .product-grid-normal { grid-template-columns: repeat(2, 1fr); gap: 15px; }
+@media (max-width: 968px) {
+  .home-hero-inner { grid-template-columns: 1fr; text-align: center; }
+  .hero-text { margin: 0 auto 30px; }
+  .hero-info-grid { grid-template-columns: 1fr 1fr; margin-top: 30px; }
+  .categories-grid { gap: 20px; }
+  .category-item-modern { width: 120px; }
+  .category-image-wrapper { width: 100px; height: 100px; }
+  .ofertas-container-pro { padding: 30px 15px; }
+}
+
+@media (max-width: 500px) {
+  .hero-info-grid { grid-template-columns: 1fr; }
+  .product-grid-layout { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
+  .section-header-flex { flex-direction: column; gap: 15px; text-align: center; }
 }

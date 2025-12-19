@@ -9,8 +9,7 @@ export default function AdminUsuarios() {
   const [busqueda, setBusqueda] = useState("");
   const { usuario: miUsuario } = useContext(AuthContext);
   
-  // --- ESTADOS PARA EL HISTORIAL ---
-  const [historial, setHistorial] = useState(null); // Lista de pedidos del usuario seleccionado
+  const [historial, setHistorial] = useState(null); 
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const [cargandoHistorial, setCargandoHistorial] = useState(false);
 
@@ -42,14 +41,14 @@ export default function AdminUsuarios() {
       }
   };
 
-  // --- FUNCIÓN VER HISTORIAL ---
   const verHistorial = async (usuario) => {
       setClienteSeleccionado(usuario);
       setCargandoHistorial(true);
-      setHistorial([]); // Limpiar anterior
+      setHistorial([]); 
       try {
           const pedidos = await obtenerHistorialCompras(usuario.id);
-          setHistorial(pedidos);
+          // Aseguramos que 'pedidos' sea un array
+          setHistorial(Array.isArray(pedidos) ? pedidos : []);
       } catch (error) {
           console.error(error);
           alert("No se pudo cargar el historial.");
@@ -63,7 +62,6 @@ export default function AdminUsuarios() {
       setHistorial(null);
   };
 
-  // Filtro
   const usuariosFiltrados = usuarios.filter(u => 
     u.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
     u.email.toLowerCase().includes(busqueda.toLowerCase())
@@ -122,7 +120,6 @@ export default function AdminUsuarios() {
 
                         <td>
                             <div style={{display:'flex', gap:'8px'}}>
-                                {/* BOTÓN HISTORIAL (NUEVO) */}
                                 <button 
                                     onClick={() => verHistorial(u)}
                                     className="btn-action btn-history"
@@ -148,7 +145,7 @@ export default function AdminUsuarios() {
         </table>
       </div>
 
-      {/* --- MODAL DE HISTORIAL --- */}
+      {/* --- MODAL DE HISTORIAL CORREGIDO --- */}
       {clienteSeleccionado && (
           <div className="modal-overlay-user">
               <div className="modal-content-user">
@@ -174,13 +171,18 @@ export default function AdminUsuarios() {
                                   {historial.map(p => (
                                       <tr key={p.id}>
                                           <td>#{p.id}</td>
-                                          <td>{new Date(p.fecha).toLocaleDateString()}</td>
+                                          {/* CORRECCIÓN: Usamos created_at que es el estándar de Laravel */}
+                                          <td>{p.created_at ? new Date(p.created_at).toLocaleDateString() : "N/A"}</td>
                                           <td>
-                                              <span className={`status-pill ${p.status}`}>
-                                                  {p.status}
+                                              {/* CORRECCIÓN: Usamos p.estado y clases dinámicas */}
+                                              <span className={`status-pill ${(p.estado || "pendiente").toLowerCase().replace(/\s/g, '-')}`}>
+                                                  {p.estado || "Pendiente"}
                                               </span>
                                           </td>
-                                          <td style={{fontWeight:'bold'}}>${p.total.toFixed(2)}</td>
+                                          <td className="td-total">
+                                              {/* CORRECCIÓN: Number() para evitar error de toFixed */}
+                                              ${Number(p.total || 0).toFixed(2)}
+                                          </td>
                                       </tr>
                                   ))}
                               </tbody>
@@ -195,7 +197,6 @@ export default function AdminUsuarios() {
               </div>
           </div>
       )}
-
     </div>
   );
 }

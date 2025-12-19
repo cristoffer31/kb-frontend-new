@@ -1,4 +1,3 @@
-// src/pages/Register.jsx
 import React, { useState, useContext } from "react";
 import "./Auth.css";
 import { AuthContext } from "../context/AuthContext";
@@ -11,9 +10,10 @@ export default function Register() {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [telefono, setTelefono] = useState("");
+  
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
-  const [telefono, setTelefono] = useState("");
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -25,22 +25,25 @@ export default function Register() {
       setOk("Registro exitoso. Ahora puedes iniciar sesión.");
       setTimeout(() => navigate("/login"), 1500);
     } catch (err) {
-      console.error("Error de registro:", err);
+      console.error("Error registro:", err);
 
-      // --- LÓGICA PARA LEER EL ERROR REAL ---
+      // --- MANEJO DE ERRORES LARAVEL ---
       if (err.response && err.response.data) {
-        // 1. Error personalizado del backend (ej: "El correo ya existe")
-        if (err.response.data.error) {
-            setError(err.response.data.error);
-        } 
-        // 2. Error de validación de Quarkus (ej: Contraseña corta)
-        else if (err.response.data.parameterViolations) {
-            const msg = err.response.data.parameterViolations[0].message;
-            setError(msg);
-        }
-        // 3. Otros errores
-        else {
-            setError("Datos inválidos. Revisa que el correo y contraseña sean correctos.");
+        const d = err.response.data;
+        
+        // 1. Mensaje directo
+        if (d.message) {
+            // Si hay errores de campos específicos (ValidationException)
+            if (d.errors) {
+                const firstKey = Object.keys(d.errors)[0];
+                setError(d.errors[firstKey][0]); // Muestra: "El campo email ya ha sido registrado"
+            } else {
+                setError(d.message);
+            }
+        } else if (d.error) {
+            setError(d.error);
+        } else {
+            setError("Datos inválidos. Revisa la información.");
         }
       } else {
         setError("No se pudo conectar con el servidor.");
@@ -75,12 +78,12 @@ export default function Register() {
           />
 
           <input 
-  type="text" 
-  placeholder="Teléfono" 
-  value={telefono} 
-  onChange={(e) => setTelefono(e.target.value)} 
-  required 
-/>
+            type="text" 
+            placeholder="Teléfono" 
+            value={telefono} 
+            onChange={(e) => setTelefono(e.target.value)} 
+            required 
+          />
 
           <input
             type="password"

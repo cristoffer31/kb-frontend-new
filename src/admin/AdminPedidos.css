@@ -1,302 +1,445 @@
+/* =========================================
+   1. ESTILOS GENERALES Y TABLA PRINCIPAL (KEEP SAFE)
+   ========================================= */
+
 .admin-pedidos {
-  background: var(--admin-card-bg);
+  background: var(--admin-card-bg, #0f172a);
   border-radius: 16px;
   padding: 20px 22px;
-  border: 1px solid var(--admin-card-border);
+  border: 1px solid var(--admin-card-border, #1e293b);
   box-shadow: 0 18px 45px rgba(15, 23, 42, 0.65);
-  color: var(--admin-text);
+  color: var(--admin-text, #f1f5f9);
+  font-family: 'Inter', sans-serif;
+  min-height: 80vh;
 }
 
 .admin-pedidos h2 {
   font-size: 20px;
   margin-bottom: 16px;
+  color: #38bdf8;
+  display: flex; align-items: center; gap: 10px;
 }
 
-/* FILTROS */
+/* --- BARRA DE FILTROS --- */
 .pedidos-filtros {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 18px;
-  align-items: center;
-  flex-wrap: wrap;
+  display: flex; gap: 12px; margin-bottom: 18px; align-items: center; flex-wrap: wrap;
+  background: rgba(30, 41, 59, 0.5); padding: 10px; border-radius: 12px;
 }
 
-.pedidos-filtros select {
-  padding: 8px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  background: #020617;
-  font-size: 14px;
-  color: var(--admin-text);
+.filtro-select, .pedidos-filtros input[type="date"] {
+  padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.4);
+  background: #020617; font-size: 14px; color: #e2e8f0; outline: none;
 }
+
+.filtro-fechas { display: flex; align-items: center; gap: 8px; color: #94a3b8; }
 
 /* Buscador */
 .buscador {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #020617;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  flex: 1;
-  min-width: 220px;
+  display: flex; align-items: center; gap: 8px; background: #020617;
+  padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(148, 163, 184, 0.4);
+  flex: 1; min-width: 220px;
 }
+.buscador input { border: none; outline: none; background: transparent; color: #e2e8f0; font-size: 14px; width: 100%; }
+.icon-search { color: #64748b; }
 
-.buscador input {
-  border: none;
-  outline: none;
-  background: transparent;
-  color: var(--admin-text);
-  font-size: 14px;
-}
+/* --- TABLA PRINCIPAL (ESTILOS QUE YA TE GUSTAN) --- */
+.tabla-responsive { width: 100%; overflow-x: auto; }
 
-/* TABLA */
 .tabla-pedidos {
-  width: 100%;
-  border-collapse: collapse;
-  background: #020617;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.7);
+  width: 100%; border-collapse: collapse; background: #020617;
+  border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.7);
 }
 
-.tabla-pedidos thead {
-  background: linear-gradient(90deg, #0f172a, #020617);
+.tabla-pedidos thead { background: linear-gradient(90deg, #1e293b, #0f172a); }
+
+.tabla-pedidos th, .tabla-pedidos td {
+  padding: 12px 15px; border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+  font-size: 13px; color: #cbd5e1; text-align: left; vertical-align: middle;
 }
 
-.tabla-pedidos th,
-.tabla-pedidos td {
-  padding: 10px 10px;
-  border-bottom: 1px solid rgba(30, 64, 175, 0.6);
-  font-size: 13px;
-  color: #e5e7eb;
-  text-align: center; 
-  vertical-align: middle;
-}
+.tabla-pedidos th { font-weight: 600; color: #94a3b8; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; }
+.tabla-pedidos tr:hover { background: rgba(56, 189, 248, 0.05); }
 
-.tabla-pedidos tr:nth-child(even) {
-  background: rgba(15, 23, 42, 0.7);
-}
+/* Columnas Específicas */
+.td-id { font-family: monospace; color: #64748b; }
+.td-total { font-weight: bold; color: #38bdf8; }
+.cliente-nombre { font-weight: 600; color: #e2e8f0; }
+.cliente-zona { display: block; font-size: 11px; color: #64748b; margin-top: 2px; }
 
-.tabla-pedidos tr:nth-child(odd) {
-  background: rgba(15, 23, 42, 0.45);
-}
-
-.tabla-pedidos tr:hover {
-  background: rgba(56, 189, 248, 0.14);
-}
-
-/* Botones & select */
+/* Acciones */
+.td-acciones { display: flex; align-items: center; gap: 8px; }
 .btn-ver {
-  background: rgba(59, 130, 246, 0.35);
-  color: #bfdbfe;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: none;
-  cursor: pointer;
-  font-size: 12px;
+  background: rgba(59, 130, 246, 0.2); color: #60a5fa; width: 32px; height: 32px;
+  border-radius: 6px; border: 1px solid rgba(59, 130, 246, 0.3); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+}
+.btn-ver:hover { background: rgba(59, 130, 246, 0.4); color: white; }
+
+.select-estado-mini {
+  padding: 6px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; font-size: 16px; cursor: pointer;
 }
 
-.select-estado {
-  margin-left: 8px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  background: #020617;
-  color: var(--admin-text);
-  font-size: 12px;
-}
-
-/* Estados */
+/* Badges de Estado (Globales) */
 .badge-pedido {
-  padding: 4px 10px;
-  border-radius: 999px;
-  color: white;
-  font-size: 11px;
+  padding: 4px 10px; border-radius: 999px; color: white; font-size: 10px; font-weight: bold;
+  text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px;
+}
+/* Reusamos estos colores también en el modal */
+.pendiente { background: rgba(249, 115, 22, 0.2); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3); }
+.enviado { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+.entregado { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+.cancelado { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+/* Botones Pequeños */
+.btn-whatsapp-sm {
+  background-color: rgba(37, 211, 102, 0.15); color: #4ade80; border: 1px solid rgba(37, 211, 102, 0.3);
+  padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s;
+}
+.btn-whatsapp-sm:hover { background-color: rgba(37, 211, 102, 0.3); color: white; }
+
+
+/* =========================================
+   2. ESTILOS DEL MODAL DE DETALLE (ARREGLADO)
+   ========================================= */
+
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(5px);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 9999;
+  padding: 20px;
 }
 
-.estado-pendiente {
-  background: #f97316;
-}
-
-.estado-enviado {
-  background: #3b82f6;
-}
-
-.estado-entregado {
-  background: #22c55e;
-}
-
-.estado-cancelado {
-  background: #ef4444;
-}
-
-/* MODAL */
-.modal-pedido {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.8);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 30;
-}
-
-.modal-card {
-  background: #020617;
+/* IMPORTANTE: Esta clase 'premium-modal' debe estar en el HTML del modal */
+.modal-content.premium-modal {
+  background: #020617; /* Fondo oscuro sólido */
+  width: 95%; max-width: 1000px;
+  max-height: 90vh;
   border-radius: 16px;
-  padding: 20px 22px;
-  border: 1px solid rgba(148, 163, 184, 0.5);
-  width: 460px;
-  max-width: 90%;
-  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.9);
+  border: 1px solid #1e293b;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+  color: #e2e8f0;
 }
 
-.modal-card h3 {
-  margin-top: 0;
-  font-size: 18px;
+/* Header Modal */
+.premium-header {
+  background: #1e293b;
+  padding: 20px 30px;
+  border-bottom: 1px solid #334155;
+  display: flex; justify-content: space-between; align-items: center;
 }
 
-.modal-card h4 {
-  margin-top: 14px;
-  margin-bottom: 8px;
-  font-size: 15px;
+.order-id-badge { font-size: 1.4rem; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+.order-date { display: block; font-size: 0.85rem; color: #94a3b8; text-transform: capitalize; margin-top: 4px;}
+
+.status-pill {
+  padding: 6px 16px; border-radius: 50px; font-weight: 700; font-size: 0.8rem;
+  display: flex; align-items: center; gap: 8px; text-transform: uppercase;
+}
+/* Mapeo de colores para el pill del modal usando las mismas clases de arriba */
+.status-pill.pendiente { background: #431407; color: #fb923c; border: 1px solid #7c2d12; }
+.status-pill.enviado { background: #172554; color: #60a5fa; border: 1px solid #1e40af; }
+.status-pill.entregado { background: #064e3b; color: #4ade80; border: 1px solid #065f46; }
+
+.btn-close-premium {
+  background: transparent; border: none; color: #64748b; font-size: 1.8rem; cursor: pointer; margin-left: 15px;
+}
+.btn-close-premium:hover { color: #ef4444; }
+
+/* Cuerpo Modal */
+.premium-body {
+  padding: 30px;
+  overflow-y: auto;
+  background: #0f172a; /* Fondo sólido para el contenido */
+  flex: 1;
 }
 
-.modal-card ul {
-  padding-left: 18px;
-  font-size: 13px;
+/* GRID DE 3 COLUMNAS */
+.info-grid-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsivo pero intenta 3 cols */
+  gap: 20px;
+  margin-bottom: 30px;
 }
 
-.modal-card .total {
-  margin-top: 10px;
-  font-weight: 600;
+/* Tarjetas Info */
+.info-card {
+  background: linear-gradient(145deg, #1e293b, #0f172a);
+  border: 1px solid #334155;
+  border-radius: 12px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
 }
 
-.btn-cerrar {
-  background: rgba(239, 68, 68, 0.65);
-  color: #fee2e2;
-  border: none;
-  padding: 8px 14px;
-  margin-top: 14px;
-  border-radius: 999px;
-  cursor: pointer;
-  font-size: 13px;
+.card-label {
+  background: rgba(30, 41, 59, 0.5);
+  padding: 12px 20px;
+  font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;
+  border-bottom: 1px solid #334155;
+  display: flex; align-items: center; gap: 8px;
 }
+
+.card-value {
+  padding: 15px 20px 5px 20px;
+  font-size: 1.1rem; font-weight: 600; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-value.main { font-size: 1.25rem; color: #38bdf8; }
+
+.sub-data {
+  padding: 0 20px 20px 20px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.sub-data .row {
+  display: flex; justify-content: space-between;
+  font-size: 0.9rem; color: #cbd5e1; border-bottom: 1px dashed #334155; padding-bottom: 4px;
+}
+.sub-data .row span { color: #64748b; font-weight: 600; font-size: 0.8rem; }
+
+/* Dirección y Badges Especiales */
+.address-box {
+  background: rgba(0, 0, 0, 0.2);
+  margin: 0 20px 15px 20px; padding: 10px;
+  border-radius: 6px; border-left: 3px solid #38bdf8;
+  font-size: 0.9rem; line-height: 1.4; color: #e2e8f0;
+}
+
+.transaccion-badge {
+  background: #020617; border: 1px dashed #475569;
+  margin: 0 20px 10px 20px; padding: 5px;
+  text-align: center; border-radius: 4px;
+  font-family: monospace; color: #fbbf24; font-size: 0.85rem;
+}
+
+/* Botones de Texto (GPS/WhatsApp) */
+.btn-action-text {
+  margin: auto 20px 20px 20px;
+  padding: 10px; border-radius: 8px; border: none;
+  font-size: 0.9rem; font-weight: 600; cursor: pointer;
+  display: flex; justify-content: center; align-items: center; gap: 8px;
+  text-decoration: none;
+}
+.btn-action-text:not(.blue) { background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+.btn-action-text:not(.blue):hover { background: #22c55e; color: white; }
+
+.btn-action-text.blue { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+.btn-action-text.blue:hover { background: #3b82f6; color: white; }
+
+/* --- TABLA PRODUCTOS MODAL --- */
+.products-container {
+  background: #1e293b;
+  border-radius: 12px; border: 1px solid #334155;
+  margin-bottom: 25px; overflow: hidden;
+}
+
+.section-title {
+  padding: 12px 20px; margin: 0; background: #334155; color: #fff; font-size: 0.95rem; font-weight: 700;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.premium-table { width: 100%; border-collapse: collapse; }
+.premium-table th { 
+  background: #1e293b; color: #94a3b8; padding: 10px 20px; text-align: left; 
+  font-size: 0.75rem; text-transform: uppercase; border-bottom: 2px solid #0f172a; 
+}
+.premium-table td { padding: 12px 20px; border-bottom: 1px solid #0f172a; color: #e2e8f0; font-size: 0.9rem; }
+.premium-table tr:last-child td { border: none; }
+
+.prod-name { font-weight: 600; color: #fff; }
+.td-right.bold { color: #38bdf8; font-weight: 700; font-size: 1rem; }
+.th-right, .td-right { text-align: right; }
+.th-center, .td-center { text-align: center; }
+
+/* --- FOOTER MODAL --- */
+.premium-footer {
+  background: #1e293b;
+  padding: 20px 30px;
+  border-top: 1px solid #334155;
+  display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px;
+  margin: 0 -30px -30px -30px; /* Hack para cubrir padding */
+}
+
+.footer-actions { display: flex; gap: 10px; }
+.status-selector { 
+  background: #0f172a; color: white; padding: 10px 15px; border: 1px solid #475569; border-radius: 8px; cursor: pointer; 
+}
+.btn-print { 
+  background: #475569; color: white; border: none; width: 42px; height: 42px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; 
+}
+.btn-print:hover { background: #cbd5e1; color: #0f172a; }
+
+.footer-summary { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; min-width: 250px; }
+.sum-row { display: flex; justify-content: space-between; width: 100%; font-size: 0.95rem; color: #94a3b8; }
+.sum-row span:last-child { color: #fff; font-family: monospace; }
+.sum-row.discount { color: #4ade80; }
+
+.sum-row.total {
+  margin-top: 8px; padding-top: 8px; border-top: 1px dashed #64748b;
+  font-size: 1.2rem; font-weight: 800; color: white; align-items: center;
+}
+.total-amount { color: #4ade80; font-size: 1.6rem; text-shadow: 0 0 15px rgba(74, 222, 128, 0.15); }
 
 /* Responsive */
-@media (max-width: 768px) {
-  .pedidos-filtros {
-    flex-direction: column;
+@media (max-width: 900px) {
+  .info-grid-row { grid-template-columns: 1fr; }
+  .premium-footer { flex-direction: column-reverse; align-items: stretch; }
+}
+
+/* =========================================
+   3. ESTILOS DE IMPRESIÓN (FACTURA PROFESIONAL)
+   ========================================= */
+
+@media print {
+  /* 1. Ocultar TODO lo que no sea el modal */
+  body * {
+    visibility: hidden;
   }
-}
 
-/* ... (mantén tus estilos anteriores de tabla y filtros) ... */
+  /* 2. Hacer visible solo el contenido del modal y sus hijos */
+  .modal-content, .modal-content * {
+    visibility: visible;
+  }
 
-/* ESTILOS NUEVOS PARA EL MODAL MEJORADO */
-.modal-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 15px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #334155;
-}
-
-.info-col h4 {
-    color: #38bdf8;
-    margin-bottom: 8px;
-    font-size: 0.95rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.info-col p {
-    margin: 4px 0;
-    font-size: 0.9rem;
-    color: #cbd5e1;
-}
-
-.direccion-box {
-    background: #0f172a;
-    padding: 8px;
-    border-radius: 6px;
-    margin: 5px 0 10px;
-    font-size: 0.85rem;
-    border: 1px solid #1e293b;
-}
-
-/* Botón GPS */
-.btn-gps-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #059669;
-    color: white;
-    text-decoration: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    transition: 0.2s;
-}
-
-.btn-gps-link:hover {
-    background: #047857;
-}
-
-.no-gps {
-    color: #64748b;
-    font-size: 0.85rem;
-    font-style: italic;
-}
-
-/* Lista productos */
-.lista-productos-modal {
-    list-style: none;
+  /* 3. Posicionar el modal como página completa */
+  .modal-overlay {
+    position: absolute;
+    left: 0; top: 0;
+    background: white;
     padding: 0;
-    margin: 0 0 15px 0;
-    max-height: 150px;
-    overflow-y: auto;
-    background: #0f172a;
-    border-radius: 8px;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .modal-content.premium-modal {
+    position: absolute;
+    left: 0; top: 0;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 20px; /* Margen de hoja */
+    box-shadow: none;
+    border: none;
+    background: white !important; /* Fondo Blanco Obligatorio */
+    color: black !important;      /* Texto Negro Obligatorio */
+    overflow: visible;
+  }
+
+  /* 4. Ocultar elementos de UI (Botones, Scroll, Iconos de cierre) */
+  .btn-close-premium, 
+  .btn-print, 
+  .footer-actions, 
+  .btn-action-text, 
+  .btn-action-whatsapp, 
+  .btn-action-mapa,
+  .no-gps-badge,
+  .modal-header .header-actions button,
+  .status-selector {
+    display: none !important;
+  }
+
+  /* 5. Estilizar el Encabezado de Factura */
+  .print-only-header {
+    display: block !important; /* Mostrar encabezado oculto */
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #000;
+    padding-bottom: 10px;
+  }
+  .brand-title { font-size: 24px; font-weight: 900; letter-spacing: 2px; }
+  .brand-info { font-size: 12px; color: #444; margin-top: 5px; }
+
+  /* 6. Ajustar Header del Modal (ID Pedido) */
+  .modal-header {
+    background: transparent !important;
+    border-bottom: none !important;
+    padding: 0 0 20px 0;
+    display: block; /* Romper flex para imprimir */
+  }
+  .header-info { text-align: left; }
+  .order-id-badge { color: #000 !important; font-size: 18px; border: 1px solid #000; display: inline-block; padding: 5px 10px; }
+  .order-date { color: #333 !important; }
+  .status-pill { border: 1px solid #000; color: #000 !important; background: transparent !important; float: right; margin-top: -40px;}
+
+  /* 7. Transformar las Tarjetas (Grid) a Texto Plano */
+  .premium-body { padding: 0; background: white !important; }
+  
+  .info-grid-row {
+    display: flex; /* Flex para mantener columnas o Grid simple */
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  .info-card {
+    background: transparent !important;
+    box-shadow: none;
+    border: 1px solid #ddd; /* Borde suave para separar áreas */
+    border-radius: 4px;
+    padding: 10px;
+    flex: 1; /* Distribuir espacio */
+  }
+
+  .card-label {
+    background: transparent !important;
+    color: #000 !important;
+    border-bottom: 1px solid #eee;
+    padding: 0 0 5px 0;
+    margin-bottom: 10px;
+  }
+
+  .card-value, .card-value.main { color: #000 !important; padding: 0; font-size: 12px; }
+  .sub-data { padding: 0; color: #000 !important; }
+  .sub-data .row { border-bottom: none; }
+  .sub-data .row span { color: #000; }
+  .address-box { border: none; padding: 0; margin: 0; color: #000; }
+  .transaccion-badge { border: 1px solid #000; color: #000; background: transparent; }
+
+  /* 8. Tabla de Productos (Estilo Clásico) */
+  .products-container {
+    background: white !important;
+    border: none;
+    padding: 0;
+    margin-top: 20px;
+  }
+  .section-title { background: #eee !important; color: #000 !important; border: 1px solid #000; }
+  
+  .premium-table th {
+    color: #000 !important;
+    border-bottom: 2px solid #000 !important;
+    background: white !important;
+  }
+  .premium-table td {
+    color: #000 !important;
+    border-bottom: 1px solid #ccc !important;
+  }
+  .prod-name { color: #000 !important; }
+  .td-right.bold { color: #000 !important; }
+
+  /* 9. Totales */
+  .premium-footer {
+    background: white !important;
+    border-top: 2px solid #000 !important;
+    margin: 20px 0 0 0;
+    padding: 20px 0 0 0;
+    display: block; /* Para que los totales vayan a la derecha */
+  }
+  
+  .footer-summary {
+    width: 300px;
+    float: right; /* Alinear a la derecha al estilo antiguo */
+  }
+  
+  .sum-row, .sum-row span { color: #000 !important; }
+  .sum-row.total { border-top: 2px solid #000; margin-top: 10px; }
+  .total-amount { color: #000 !important; }
 }
 
-.lista-productos-modal li {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 12px;
-    border-bottom: 1px solid #1e293b;
-    font-size: 0.9rem;
-}
-
-/* Totales */
-.modal-totales {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-    margin-bottom: 15px;
-}
-
-.fila-total {
-    display: flex;
-    justify-content: space-between;
-    width: 180px;
-    font-size: 0.9rem;
-    color: #94a3b8;
-}
-
-.fila-total.final {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #e5e7eb;
-    border-top: 1px solid #334155;
-    padding-top: 4px;
-    margin-top: 4px;
-}
-
-@media (max-width: 600px) {
-    .modal-grid { grid-template-columns: 1fr; }
+/* Ocultar el header de impresión en pantalla normal */
+.print-only-header {
+  display: none;
 }

@@ -12,7 +12,6 @@ export default function Productos() {
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
   const [cargando, setCargando] = useState(false);
 
-  // Leemos la URL para saber si hay filtros activos
   const [searchParams, setSearchParams] = useSearchParams();
   const busquedaUrl = searchParams.get("buscar") || "";
   const catUrl = searchParams.get("cat");
@@ -21,33 +20,31 @@ export default function Productos() {
   const [filtroCategoria, setFiltroCategoria] = useState(catUrl ? Number(catUrl) : "");
 
   useEffect(() => {
-    listarCategorias().then(data => setCategorias(Array.isArray(data) ? data : []));
+    listarCategorias().then(data => {
+        const lista = data.data || (Array.isArray(data) ? data : []);
+        setCategorias(lista);
+    });
   }, []);
 
-  // Sincronizar estado si la URL cambia (ej: clic en categoría desde Home)
   useEffect(() => {
     setFiltroNombre(busquedaUrl);
     if (catUrl) setFiltroCategoria(Number(catUrl));
+    else setFiltroCategoria("");
   }, [busquedaUrl, catUrl]);
 
-  // --- EFECTO MAESTRO DE CARGA ---
   useEffect(() => {
     async function cargarDatos() {
       setCargando(true);
       try {
         let data = [];
-
-        // Si hay algún filtro (nombre o categoría), usamos el BUSCADOR
         if (filtroNombre || filtroCategoria) {
-            data = await buscarProductos(filtroNombre, filtroCategoria || null);
-        } 
-        // Si no hay filtros, cargamos la página inicial
-        else {
-            const res = await listarProductos(0);
-            data = res.content || [];
+            const res = await buscarProductos(filtroNombre, filtroCategoria || null);
+            data = res.data || (Array.isArray(res) ? res : []);
+        } else {
+            const res = await listarProductos(0); 
+            data = res.data || res.content || (Array.isArray(res) ? res : []);
         }
-
-        setProductos(Array.isArray(data) ? data : []);
+        setProductos(data);
       } catch (e) {
         console.error(e);
         setProductos([]);
@@ -55,18 +52,22 @@ export default function Productos() {
         setCargando(false);
       }
     }
-    
-    // Pequeño retardo para no saturar si escribes rápido
-    const timer = setTimeout(cargarDatos, 300);
+    const timer = setTimeout(cargarDatos, 500);
     return () => clearTimeout(timer);
-
   }, [filtroNombre, filtroCategoria]);
 
-  // Actualizar URL y Estado al cambiar categoría
+  const handleSearchChange = (e) => {
+      const valor = e.target.value;
+      setFiltroNombre(valor);
+      const params = {};
+      if (valor) params.buscar = valor;
+      if (filtroCategoria) params.cat = filtroCategoria;
+      setSearchParams(params);
+  };
+
   const handleCatChange = (e) => {
       const valor = e.target.value;
       setFiltroCategoria(valor);
-      
       const params = {};
       if (filtroNombre) params.buscar = filtroNombre;
       if (valor) params.cat = valor;
@@ -77,15 +78,14 @@ export default function Productos() {
     <div className="productos-page">
       <h1>Catálogo</h1>
 
-      <div className="filtros" style={{marginBottom:'30px', display:'flex', gap:'10px'}}>
+      <div className="filtros">
         <input 
             type="text" 
-            placeholder="Buscar..." 
+            placeholder="Buscar producto..." 
             value={filtroNombre}
-            onChange={(e) => setFiltroNombre(e.target.value)}
-            style={{padding:'10px', borderRadius:'8px', border:'1px solid #ccc'}}
+            onChange={handleSearchChange}
         />
-        <select value={filtroCategoria} onChange={handleCatChange} style={{padding:'10px', borderRadius:'8px', border:'1px solid #ccc'}}>
+        <select value={filtroCategoria} onChange={handleCatChange}>
           <option value="">Todas las categorías</option>
           {categorias.map((cat) => (
             <option key={cat.id} value={cat.id}>{cat.nombre}</option>
@@ -93,13 +93,13 @@ export default function Productos() {
         </select>
       </div>
 
-      {cargando ? <p style={{textAlign:'center'}}>Cargando...</p> : (
-          <div className="productos-grid">
+      {cargando ? <div style={{textAlign:'center', padding:'20px'}}>Cargando...</div> : (
+          <div className="galeria-container">
             {productos.length === 0 ? (
-              <p style={{textAlign:'center', width:'100%', gridColumn:'1/-1'}}>No se encontraron productos.</p>
+              <p style={{width:'100%', textAlign:'center'}}>No se encontraron productos.</p>
             ) : (
               productos.map((prod) => (
-                <div key={prod.id} onClick={() => setProductoSeleccionado(prod)} style={{cursor:'pointer'}}>
+                <div key={prod.id} className="tarjeta-wrapper" onClick={() => setProductoSeleccionado(prod)}>
                     <ProductCard producto={prod} />
                 </div>
               ))

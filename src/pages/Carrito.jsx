@@ -1,45 +1,87 @@
-import React, { useContext } from "react";
+import React, { useContext, useState, useMemo } from "react"; // Añadimos useMemo para eficiencia
 import { useNavigate, Link } from "react-router-dom";
+import api from "../services/api";
 import "./Carrito.css";
 import { CarritoContext } from "../context/CarritoContext";
 import { AuthContext } from "../context/AuthContext";
-import { FaTrash, FaArrowRight, FaShoppingBag, FaMinus, FaPlus, FaTag, FaBoxOpen } from "react-icons/fa";
+import { FaTrash, FaArrowRight, FaShoppingBag, FaMinus, FaPlus, FaTag, FaBoxOpen, FaTicketAlt, FaTimes } from "react-icons/fa";
 
 export default function Carrito() {
-  const { items, quitarUno, agregarProducto, quitarProducto, limpiarCarrito, total, totalItems, obtenerPrecioUnitario } = useContext(CarritoContext);
+  const { carrito, actualizarCantidad, eliminarProducto, vaciarCarrito, total, cantidadTotal, obtenerPrecioUnitario } = useContext(CarritoContext);
   const { isLogged } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // --- CÁLCULO DE AHORROS ---
-  let totalLista = 0;
-  let ahorroOfertas = 0;
-  let ahorroMayoreo = 0;
+  // --- ESTADOS ---
+  const [codigoCupon, setCodigoCupon] = useState("");
+  const [cuponAplicado, setCuponAplicado] = useState(null);
+  const [descuentoValor, setDescuentoValor] = useState(0); 
+  const [cargandoCupon, setCargandoCupon] = useState(false);
 
-  items.forEach((it) => {
-    const precioBase = it.producto.precio; 
-    const precioPagado = obtenerPrecioUnitario(it.producto, it.cantidad); 
-    const precioOferta = it.producto.enOferta ? it.producto.precioOferta : null;
+  // --- LÓGICA DE CUPÓN ---
+  const aplicarCupon = async () => {
+    if (!codigoCupon.trim()) return;
+    setCargandoCupon(true);
+    try {
+        const res = await api.get(`/cupones/validar/${codigoCupon.trim()}`);
+        const data = res.data;
 
-    totalLista += precioBase * it.cantidad;
-
-    const ahorroEnItem = (precioBase - precioPagado) * it.cantidad;
-
-    if (ahorroEnItem > 0) {
+        // --- SOLUCIÓN AL NULL ---
+        // Intentamos obtener el valor de cualquier propiedad posible que mande el backend
+        const valorNumerico = Number(data.valor) || Number(data.porcentaje) || 0;
+        const subtotalActual = Number(total) || 0;
         
-        if (precioOferta && precioPagado === precioOferta) {
-            ahorroOfertas += ahorroEnItem;
-        } else {
-          
-            ahorroMayoreo += ahorroEnItem;
-        }
-    }
-  });
+        let ahorroCalculado = 0;
 
-  if (items.length === 0) {
+        if (data.tipo === 'PORCENTAJE') {
+            ahorroCalculado = (subtotalActual * valorNumerico) / 100;
+        } else {
+            ahorroCalculado = valorNumerico;
+        }
+
+        // Si el ahorro es 0 o NaN, algo anda mal con el dato del backend
+        if (!ahorroCalculado || isNaN(ahorroCalculado)) {
+            console.error("El backend mandó un valor inválido:", data);
+        }
+
+        const ahorroFinal = Math.min(ahorroCalculado, subtotalActual);
+
+        setDescuentoValor(ahorroFinal);
+        setCuponAplicado({
+            ...data,
+            valorMostrado: valorNumerico // Guardamos el número limpio para el texto
+        });
+        
+    } catch (error) {
+        setDescuentoValor(0);
+        setCuponAplicado(null);
+    } finally {
+        setCargandoCupon(false);
+    }
+};
+
+  const quitarCupon = () => {
+    setCuponAplicado(null);
+    setDescuentoValor(0);
+    setCodigoCupon("");
+  };
+
+  // --- CÁLCULOS SEGUROS PARA EL RENDER ---
+  // Usamos useMemo para que el total se actualice SIEMPRE que cambie el total del carrito o el descuento
+  const { subtotalSeguro, totalConDescuento } = useMemo(() => {
+    const s = Number(total) || 0;
+    const d = Number(descuentoValor) || 0;
+    return {
+        subtotalSeguro: s,
+        totalConDescuento: Math.max(0, s - d)
+    };
+  }, [total, descuentoValor]);
+
+  if (!carrito || carrito.length === 0) {
     return (
       <div className="carrito-vacio-container">
         <div className="icono-vacio"><FaShoppingBag /></div>
         <h2>Tu carrito está vacío</h2>
+        <p>¿No sabes qué comprar? ¡Miles de productos te esperan!</p>
         <Link to="/productos" className="btn-ir-tienda">Ir a la Tienda</Link>
       </div>
     );
@@ -47,97 +89,121 @@ export default function Carrito() {
 
   return (
     <div className="carrito-page">
-      <h1 className="carrito-titulo">Mi Carrito ({totalItems})</h1>
+      <div className="carrito-header">
+        <h1 className="carrito-titulo">Mi Carrito <span className="badge-cantidad">{cantidadTotal}</span></h1>
+        <button className="btn-limpiar" onClick={vaciarCarrito}>Vaciar Carrito</button>
+      </div>
 
       <div className="carrito-grid">
         <div className="carrito-items">
-          {items.map((it) => {
-            const precioFinal = obtenerPrecioUnitario(it.producto, it.cantidad);
-            const precioBase = it.producto.precio;
-            
-            let etiqueta = null;
-            const precioOferta = it.producto.enOferta ? it.producto.precioOferta : null;
-            
-            if (precioOferta && precioFinal === precioOferta) {
-                etiqueta = { text: "OFERTA FLASH", icon: <FaTag />, class: "tag-oferta" };
-            } else if (precioFinal < precioBase) {
-                etiqueta = { text: "PRECIO MAYOREO", icon: <FaBoxOpen />, class: "tag-mayoreo" };
-            }
+          {carrito.map((prod, index) => {
+            const img = prod.imagenUrl || prod.imagen || "/placeholder.png";
+            const nombre = prod.nombre || "Producto";
+            const precioBase = parseFloat(prod.precio || 0);
+            const precioFinal = obtenerPrecioUnitario(prod, prod.cantidad);
+            const subtotalItem = precioFinal * prod.cantidad;
 
             return (
-              <div key={it.producto.id} className="item-card">
+              <div key={prod.id || index} className="item-card">
                 <div className="item-img-wrapper">
-                    <img src={it.producto.imagenUrl || "/placeholder.png"} alt={it.producto.nombre} />
+                  <img src={img} alt={nombre} />
                 </div>
-                
-                <div className="item-info">
-                  <div className="info-header">
-                      <h3>{it.producto.nombre}</h3>
-                      <button className="btn-trash" onClick={() => quitarProducto(it.producto.id)}><FaTrash /></button>
-                  </div>
-                  
-                  {etiqueta && (
-                      <div className={`badge-descuento ${etiqueta.class}`}>
-                          {etiqueta.icon} {etiqueta.text}
+                <div className="item-content">
+                  <div className="item-main-info">
+                      <div className="info-header">
+                          <h3>{nombre}</h3>
                       </div>
-                  )}
-
-                  <div className="item-precios">
-                    {precioFinal < precioBase && <span className="precio-tachado">${precioBase.toFixed(2)}</span>}
-                    <span className="precio-actual">${precioFinal.toFixed(2)}</span>
+                      <div className="item-precios">
+                        {precioFinal < precioBase && <span className="precio-tachado">${precioBase.toFixed(2)}</span>}
+                        <span className="precio-actual">${precioFinal.toFixed(2)}</span>
+                      </div>
                   </div>
-
-                  <div className="item-controles">
-                    <div className="qty-selector-sm">
-                        <button onClick={() => quitarUno(it.producto.id)}><FaMinus/></button>
-                        <span>{it.cantidad}</span>
-                        <button onClick={() => agregarProducto(it.producto)}><FaPlus/></button>
+                  <div className="item-actions">
+                    <div className="qty-selector-modern">
+                        <button onClick={() => actualizarCantidad(prod.id, prod.cantidad - 1)} disabled={prod.cantidad <= 1} className="qty-btn"><FaMinus/></button>
+                        <span className="qty-value">{prod.cantidad}</span>
+                        <button onClick={() => actualizarCantidad(prod.id, prod.cantidad + 1)} className="qty-btn"><FaPlus/></button>
                     </div>
-                    <div className="item-subtotal">Subtotal: <strong>${(precioFinal * it.cantidad).toFixed(2)}</strong></div>
+                    <div className="item-subtotal-box">
+                        <span className="label-subtotal">Subtotal:</span>
+                        <span className="valor-subtotal">${subtotalItem.toFixed(2)}</span>
+                    </div>
+                    <button className="btn-trash-icon" onClick={() => eliminarProducto(prod.id)}>
+                        <FaTrash />
+                    </button>
                   </div>
                 </div>
               </div>
             );
           })}
-          <button className="btn-limpiar" onClick={limpiarCarrito}>Vaciar Carrito</button>
         </div>
 
-        {/* RESUMEN LATERAL */}
         <div className="carrito-sidebar">
           <div className="resumen-card">
             <h2>Resumen del Pedido</h2>
             
-            <div className="resumen-fila">
-                <span>Subtotal (Lista)</span>
-                <span>${totalLista.toFixed(2)}</span>
+            {/* SECCIÓN DE CUPÓN */}
+            <div className="cupon-container">
+                <div className="cupon-input-group">
+                    <FaTicketAlt className="cupon-icon" />
+                    <input 
+                        type="text" 
+                        placeholder="Código de descuento" 
+                        value={codigoCupon}
+                        onChange={(e) => setCodigoCupon(e.target.value.toUpperCase())}
+                        disabled={!!cuponAplicado}
+                    />
+                    {!cuponAplicado ? (
+                        <button onClick={aplicarCupon} disabled={cargandoCupon || !codigoCupon}>
+                            {cargandoCupon ? "..." : "Aplicar"}
+                        </button>
+                    ) : (
+                        <button className="btn-remove-cupon" onClick={quitarCupon}><FaTimes /></button>
+                    )}
+                </div>
+                {cuponAplicado && (
+    <p className="cupon-success-msg">
+        ✅ Cupón <strong>{cuponAplicado.codigo}</strong> aplicado 
+        ({cuponAplicado.porcentaje}% OFF)
+    </p>
+)}
             </div>
-            
-            {/* AHORROS */}
-            {ahorroOfertas > 0 && (
-                <div className="resumen-fila ahorro-oferta">
-                    <span><FaTag /> Ahorro Ofertas</span>
-                    <span>- ${ahorroOfertas.toFixed(2)}</span>
+
+            <div className="resumen-detalles">
+                <div className="resumen-fila">
+                    <span>Subtotal</span>
+                    <span>${subtotalSeguro.toFixed(2)}</span>
                 </div>
-            )}
-            {ahorroMayoreo > 0 && (
-                <div className="resumen-fila ahorro-mayoreo">
-                    <span><FaBoxOpen /> Ahorro Mayoreo</span>
-                    <span>- ${ahorroMayoreo.toFixed(2)}</span>
+                {descuentoValor > 0 && (
+                    <div className="resumen-fila descuento-fila">
+                        <span>Descuento</span>
+                        <span className="ahorro-txt">- ${descuentoValor.toFixed(2)}</span>
+                    </div>
+                )}
+                <div className="resumen-fila envio">
+                    <span>Envío</span>
+                    <span className="Validar">Calculado en el pago</span>
                 </div>
-            )}
+            </div>
 
             <div className="divider"></div>
-            
             <div className="resumen-total">
-              <span>Total</span>
-              <div className="total-precio"><span>${total.toFixed(2)}</span></div>
+              <span>Total a Pagar</span>
+              {/* AQUÍ SE MUESTRA EL TOTAL ACTUALIZADO */}
+              <div className="total-precio">${totalConDescuento.toFixed(2)}</div>
             </div>
-
-            <button className="btn-checkout" onClick={() => navigate(isLogged ? "/checkout" : "/login")}>
-              Proceder al Pago <FaArrowRight />
-            </button>
             
-            <div className="seguridad-info">🔒 Compra 100% Segura</div>
+            <button 
+                className="btn-checkout" 
+                onClick={() => navigate(isLogged ? "/checkout" : "/login", { 
+                    state: { 
+                        cupon: cuponAplicado?.codigo,
+                        descuento: descuentoValor 
+                    } 
+                })}
+            >
+              {isLogged ? "Proceder al Pago" : "Iniciar Sesión para Pagar"} <FaArrowRight />
+            </button>
           </div>
         </div>
       </div>

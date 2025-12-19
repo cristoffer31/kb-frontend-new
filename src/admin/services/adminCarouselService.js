@@ -1,33 +1,25 @@
 import api from "../../services/api";
 
-// Listar (Público)
 export async function listarCarousel() {
-  const res = await api.get("/carousel");
-  return res.data;
+  try {
+    const res = await api.get("/carousel");
+    if (res.data.data && Array.isArray(res.data.data)) return res.data.data;
+    if (Array.isArray(res.data)) return res.data;
+    return [];
+  } catch (e) { return []; }
 }
 
-// Crear (Admin) - Sube imagen y guarda
 export async function crearCarousel(archivo, titulo) {
-  // 1. Subir a Cloudinary
   const fd = new FormData();
-  fd.append("file", archivo);
-  
-  const uploadRes = await api.post("/upload", fd, {
+  fd.append("titulo", titulo);
+  if (archivo) fd.append("imagen", archivo); // Laravel espera 'imagen' o 'file'
+
+  const res = await api.post("/carousel", fd, {
       headers: { "Content-Type": "multipart/form-data" }
   });
-  
-  const url = uploadRes.data.url;
-
-  // 2. Guardar en base de datos
-  const res = await api.post("/carousel", {
-      imageUrl: url,
-      titulo: titulo
-  });
-  
   return res.data;
 }
 
-// Eliminar (Admin)
 export async function eliminarCarousel(id) {
   return api.delete(`/carousel/${id}`);
 }
