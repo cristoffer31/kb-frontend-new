@@ -11,8 +11,15 @@ export async function listarCarousel() {
 
 export async function crearCarousel(archivo, titulo) {
   const fd = new FormData();
-  fd.append("titulo", titulo);
-  if (archivo) fd.append("imagen", archivo); // Laravel espera 'imagen' o 'file'
+  
+  // Agregamos el título
+  fd.append("titulo", titulo || ""); 
+
+  // --- CORRECCIÓN AQUÍ ---
+  // Antes decía "imagen", ahora dice "imageUrl" para calmar al Backend
+  if (archivo) {
+      fd.append("imageUrl", archivo); 
+  }
 
   const res = await api.post("/carousel", fd, {
       headers: { "Content-Type": "multipart/form-data" }

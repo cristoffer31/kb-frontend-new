@@ -71,7 +71,7 @@ export default function AdminPedidos() {
 
   const getIconoEstado = (estado) => {
       switch ((estado || "").toUpperCase()) {
-          case "PENDIENTE DE PAGO": return <FaClock style={{color: '#be123c'}} />; // Color BAC
+          case "PENDIENTE DE PAGO": return <FaClock style={{color: '#be123c'}} />; 
           case "PENDIENTE": return <FaClock />;
           case "ENVIADO": return <FaShippingFast />;
           case "ENTREGADO": return <FaCheckCircle />;
@@ -80,12 +80,33 @@ export default function AdminPedidos() {
       }
   };
 
+  // --- CORRECCIÓN FINAL GPS ---
+  // Esta función repara enlaces rotos y formatea coordenadas correctamente
   const getMapUrl = (coords) => {
       if (!coords) return null;
-      let clean = String(coords).trim();
-      if (["0", "null", "undefined", "sin gps"].includes(clean.toLowerCase()) || clean.length < 5) return null;
-      if (clean.toLowerCase().startsWith("http")) return clean.replace(/^http:/, 'https:');
-      return `https://www.google.com/maps/search/?api=1&query=${clean}`;
+      let val = String(coords).trim();
+      
+      // 1. Validaciones de basura
+      if (["0", "null", "undefined", "sin gps"].includes(val.toLowerCase()) || val.length < 5) return null;
+      
+      // 2. REPARACIÓN DE URLS "SUCIAS" (Lo que vi en tu base de datos)
+      // Si la URL contiene 'google' y 'q=', extraemos las coordenadas limpias
+      if (val.includes("google") && val.includes("q=")) {
+          try {
+              // Extrae lo que está después de q= (ej: 13.5,-89.2)
+              const parts = val.split("q=");
+              if (parts[1]) {
+                  const cleanCoords = parts[1].split("&")[0]; // Quita parametros extra si los hay
+                  return `https://www.google.com/maps?q=${cleanCoords}`;
+              }
+          } catch (e) { console.error("Error parseando mapa", e); }
+      }
+
+      // 3. Si ya es un link normal que empieza con http (y no entró en el fix de arriba)
+      if (val.toLowerCase().startsWith("http")) return val;
+      
+      // 4. Si son solo números (ej: 13.67, -89.23)
+      return `https://www.google.com/maps?q=${val}`;
   };
 
   function filtrarPedidos() {
@@ -108,7 +129,6 @@ export default function AdminPedidos() {
 
   const lista = filtrarPedidos();
   
-  // Cálculo de subtotal de productos (antes de envío y descuento)
   const subtotalProductos = detalle ? (detalle.items_relacion || []).reduce((acc, item) => 
     acc + (Number(item.precio_unitario) * item.cantidad), 0) : 0;
 
@@ -226,12 +246,26 @@ export default function AdminPedidos() {
 
                   <div className="info-card">
                       <div className="card-label"><FaMapMarkerAlt/> Logística</div>
-                      <div className="card-value">{detalle.departamento}</div>
-                      <div className="sub-data address-box">
-                          {detalle.direccion_completa || "Sin dirección"}
+                      <div className="card-value">
+                        {detalle.departamento || detalle.zona || "Zona n/d"}
                       </div>
+                      
+                      {/* LÓGICA DE DIRECCIÓN MEJORADA */}
+                      <div className="sub-data address-box" style={{
+                          whiteSpace: 'pre-wrap', 
+                          lineHeight: '1.4',
+                          background: 'rgba(0,0,0,0.2)',
+                          padding: '8px',
+                          borderRadius: '6px',
+                          marginTop: '5px',
+                          border: '1px solid rgba(255,255,255,0.1)'
+                      }}>
+                          {detalle.direccion_completa || detalle.direccion || detalle.direccion_envio || "Sin dirección exacta registrada"}
+                      </div>
+
+                      {/* BOTÓN GPS CORREGIDO */}
                       {getMapUrl(detalle.coordenadas) && (
-                          <a href={getMapUrl(detalle.coordenadas)} target="_blank" rel="noopener noreferrer" className="btn-action-text blue">
+                          <a href={getMapUrl(detalle.coordenadas)} target="_blank" rel="noopener noreferrer" className="btn-action-text blue" style={{marginTop:'8px', display:'inline-block'}}>
                               <FaMapMarkedAlt/> Abrir GPS
                           </a>
                       )}
@@ -269,7 +303,7 @@ export default function AdminPedidos() {
               </div>
 
               <div className="premium-footer">
-                   <div className="footer-actions">
+                    <div className="footer-actions">
                         <select className="status-selector" value={detalle.estado} onChange={(e) => cambiarEstado(detalle.id, e.target.value)}>
                            <option value="PENDIENTE DE PAGO">💳 ESPERANDO PAGO BAC</option>
                            <option value="PENDIENTE">⏳ PENDIENTE (PAGADO)</option>
@@ -278,24 +312,30 @@ export default function AdminPedidos() {
                            <option value="CANCELADO">❌ CANCELADO</option>
                         </select>
                         <button className="btn-print" onClick={() => window.print()}><FaPrint/></button>
-                   </div>
+                    </div>
 
-                   <div className="footer-summary">
-                       <div className="sum-row"><span>Subtotal:</span> <span>${subtotalProductos.toFixed(2)}</span></div>
-                       <div className="sum-row"><span>Envío:</span> <span>+ ${Number(detalle.costo_envio).toFixed(2)}</span></div>
-                       
-                       {/* DESCUENTO REAL MOSTRADO AQUÍ */}
-                       {Number(detalle.descuento) > 0 && (
-                           <div className="sum-row discount" style={{color: '#e53e3e', fontWeight: 'bold'}}>
-                               <span>Descuento:</span> <span>- ${Number(detalle.descuento).toFixed(2)}</span>
-                           </div>
-                       )}
-                       
-                       <div className="sum-row total">
-                           <span>TOTAL</span>
-                           <span className="total-amount">${Number(detalle.total).toFixed(2)}</span>
-                       </div>
-                   </div>
+                    <div className="footer-summary">
+                        <div className="sum-row"><span>Subtotal:</span> <span>${subtotalProductos.toFixed(2)}</span></div>
+                        <div className="sum-row">
+                            <span>Envío:</span> 
+                            {Number(detalle.costo_envio) === 0 ? (
+                                <span style={{color: '#059669', fontWeight: 'bold'}}>GRATIS</span>
+                            ) : (
+                                <span>+ ${Number(detalle.costo_envio).toFixed(2)}</span>
+                            )}
+                        </div>
+                        
+                        {Number(detalle.descuento) > 0 && (
+                            <div className="sum-row discount" style={{color: '#e53e3e', fontWeight: 'bold'}}>
+                                <span>Descuento:</span> <span>- ${Number(detalle.descuento).toFixed(2)}</span>
+                            </div>
+                        )}
+                        
+                        <div className="sum-row total">
+                            <span>TOTAL</span>
+                            <span className="total-amount">${Number(detalle.total).toFixed(2)}</span>
+                        </div>
+                    </div>
               </div>
             </div>
           </div>

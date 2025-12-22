@@ -6,6 +6,8 @@ import { FaFire, FaStar, FaShippingFast, FaBoxOpen, FaLock, FaCheckCircle } from
 import ProductCard from "../components/ProductCard";
 import Carousel from "../components/Carousel";
 import ProductModal from "../components/ProductModal"; 
+// 1. Asegúrate de que este import esté presente (ya lo tenías)
+import Nosotros from '../components/Nosotros';
 
 // Servicios
 import { listarProductos, listarOfertas } from "../services/productoService";
@@ -86,7 +88,7 @@ export default function Home() {
 
       <div className="container">
         
-        {/* 2. CATEGORÍAS (DISEÑO MEJORADO SIN BLOQUES) */}
+        {/* 2. CATEGORÍAS */}
         <section className="categories-section">
           <div className="section-header-centered">
             <h2 className="section-title-modern">Explora por Categoría</h2>
@@ -137,7 +139,11 @@ export default function Home() {
           <Carousel />
         </div>
 
-        {/* 5. LO MÁS VENDIDO */}
+        {/* 5. SECCIÓN NOSOTROS (NUEVO) */}
+        {/* Aquí insertamos el componente que acabamos de crear */}
+        <Nosotros />
+      
+        {/* 6. LO MÁS VENDIDO */}
         <section className="trending-section">
           <div className="section-header-flex">
             <h2 className="trending-title">

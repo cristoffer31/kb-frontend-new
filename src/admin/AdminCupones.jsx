@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from "react";
-// Asegúrate de tener estas funciones en tu servicio, o créalas
+// Asegúrate de tener estas funciones en tu servicio
 import { adminListarCupones, adminCrearCupon, adminEliminarCupon } from "./services/adminCuponService"; 
-import "./AdminPedidos.css"; // Reutilizamos estilos del admin
-import { FaTicketAlt, FaTrash, FaPlus } from "react-icons/fa";
+import "./AdminPedidos.css"; 
+import { FaTicketAlt, FaTrash, FaPlus, FaTruck } from "react-icons/fa";
 
 export default function AdminCupones() {
   const [cupones, setCupones] = useState([]);
   
-  // 1. DEFINIR LOS ESTADOS (Esto es lo que te faltaba)
+  // 1. ESTADOS DEL FORMULARIO
   const [codigo, setCodigo] = useState("");
   const [porcentaje, setPorcentaje] = useState("");
   const [fecha, setFecha] = useState("");
-  
-  // Cargar cupones al inicio
+  const [esEnvioGratis, setEsEnvioGratis] = useState(false); // <--- NUEVO ESTADO
+
   useEffect(() => {
     cargar();
   }, []);
@@ -24,20 +24,21 @@ export default function AdminCupones() {
     } catch (error) { console.error(error); }
   }
 
-  // 2. FUNCIÓN DE GUARDAR CORREGIDA
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validaciones básicas
-    if (!codigo || !porcentaje || !fecha) {
-        return alert("Todos los campos son obligatorios");
+    // Validación: Si NO es envío gratis, el porcentaje es obligatorio
+    if (!codigo || (!esEnvioGratis && !porcentaje) || !fecha) {
+        return alert("Completa los campos obligatorios");
     }
 
-    // Preparamos los datos EXACTAMENTE como los pide Laravel
+    // Preparamos los datos
     const payload = {
-        codigo: codigo.toUpperCase(),       // Backend espera 'codigo'
-        porcentaje: parseInt(porcentaje),   // Backend espera 'porcentaje' (número)
-        fecha_expiracion: fecha,            // Backend espera 'fecha_expiracion'
+        codigo: codigo.toUpperCase(),
+        // Si es envío gratis, mandamos 0 en porcentaje, si no, lo que escribió el usuario
+        porcentaje: esEnvioGratis ? 0 : parseInt(porcentaje),
+        esEnvioGratis: esEnvioGratis, // <--- Enviamos la bandera al Backend
+        fecha_expiracion: fecha,
         activo: true
     };
 
@@ -49,23 +50,16 @@ export default function AdminCupones() {
         setCodigo("");
         setPorcentaje("");
         setFecha("");
+        setEsEnvioGratis(false); // Resetear checkbox
         
-        // Recargar lista
         cargar();
 
     } catch (error) {
         console.error(error);
-        // Manejo del error 422 (Validación de Laravel)
         if (error.response && error.response.status === 422) {
-            const errors = error.response.data.errors;
-            let msg = "Error de validación:\n";
-            // Recorrer errores y mostrarlos
-            Object.keys(errors).forEach(key => {
-                msg += `- ${errors[key][0]}\n`;
-            });
-            alert(msg);
+            alert("Error: El código ya existe o los datos son inválidos.");
         } else {
-            alert("Error al crear cupón. Revisa la consola.");
+            alert("Error al crear cupón.");
         }
     }
   };
@@ -83,7 +77,7 @@ export default function AdminCupones() {
       {/* FORMULARIO DE CREACIÓN */}
       <div className="pedidos-filtros" style={{display:'block', marginBottom:'20px'}}>
           <h4 style={{color:'#38bdf8', marginTop:0}}>Nuevo Cupón</h4>
-          <form onSubmit={handleSubmit} style={{display:'flex', gap:'10px', flexWrap:'wrap', alignItems:'end'}}>
+          <form onSubmit={handleSubmit} style={{display:'flex', gap:'15px', flexWrap:'wrap', alignItems:'end'}}>
               
               <div style={{display:'flex', flexDirection:'column'}}>
                   <label style={{color:'#94a3b8', fontSize:'12px'}}>Código:</label>
@@ -92,21 +86,38 @@ export default function AdminCupones() {
                     placeholder="Ej: VERANO2025" 
                     className="filtro-select"
                     value={codigo}
-                    onChange={e => setCodigo(e.target.value)} // Vinculamos estado
+                    onChange={e => setCodigo(e.target.value)}
                   />
               </div>
 
-              <div style={{display:'flex', flexDirection:'column'}}>
-                  <label style={{color:'#94a3b8', fontSize:'12px'}}>Porcentaje (%):</label>
+              {/* CHECKBOX ENVÍO GRATIS */}
+              <div style={{display:'flex', alignItems:'center', marginBottom:'12px', background:'rgba(255,255,255,0.05)', padding:'5px 10px', borderRadius:'5px', border: esEnvioGratis ? '1px solid #4ade80' : '1px solid transparent'}}>
                   <input 
-                    type="number" 
-                    placeholder="Ej: 10" 
-                    className="filtro-select"
-                    style={{width:'80px'}}
-                    value={porcentaje}
-                    onChange={e => setPorcentaje(e.target.value)} // Vinculamos estado
+                    type="checkbox" 
+                    id="chkEnvio"
+                    style={{width:'18px', height:'18px', marginRight:'8px', cursor:'pointer'}}
+                    checked={esEnvioGratis}
+                    onChange={e => setEsEnvioGratis(e.target.checked)}
                   />
+                  <label htmlFor="chkEnvio" style={{color: esEnvioGratis ? '#4ade80' : '#cbd5e1', cursor:'pointer', fontSize:'14px', fontWeight: esEnvioGratis?'bold':'normal'}}>
+                      <FaTruck style={{marginRight:'5px'}}/> Envío Gratis
+                  </label>
               </div>
+
+              {/* CAMPO PORCENTAJE (Se oculta o deshabilita si es envío gratis) */}
+              {!esEnvioGratis && (
+                  <div style={{display:'flex', flexDirection:'column'}}>
+                      <label style={{color:'#94a3b8', fontSize:'12px'}}>Porcentaje (%):</label>
+                      <input 
+                        type="number" 
+                        placeholder="Ej: 10" 
+                        className="filtro-select"
+                        style={{width:'80px'}}
+                        value={porcentaje}
+                        onChange={e => setPorcentaje(e.target.value)}
+                      />
+                  </div>
+              )}
 
               <div style={{display:'flex', flexDirection:'column'}}>
                   <label style={{color:'#94a3b8', fontSize:'12px'}}>Vence:</label>
@@ -114,7 +125,7 @@ export default function AdminCupones() {
                     type="date" 
                     className="filtro-select"
                     value={fecha}
-                    onChange={e => setFecha(e.target.value)} // Vinculamos estado
+                    onChange={e => setFecha(e.target.value)}
                   />
               </div>
 
@@ -130,7 +141,7 @@ export default function AdminCupones() {
               <thead>
                   <tr>
                       <th>Código</th>
-                      <th>Descuento</th>
+                      <th>Beneficio</th>
                       <th>Vence</th>
                       <th>Estado</th>
                       <th>Acción</th>
@@ -139,9 +150,23 @@ export default function AdminCupones() {
               <tbody>
                   {cupones.map(c => (
                       <tr key={c.id}>
-                          <td style={{fontWeight:'bold', color:'#e2e8f0'}}>{c.codigo}</td>
-                          <td style={{color:'#4ade80', fontWeight:'bold'}}>{c.porcentaje}% OFF</td>
-                          <td>{c.fecha_expiracion}</td>
+                          <td style={{fontWeight:'bold', color:'#e2e8f0', fontSize:'1.1rem'}}>{c.codigo}</td>
+                          
+                          {/* Lógica de visualización en la tabla */}
+                          <td>
+                              {c.es_envio_gratis || c.esEnvioGratis ? (
+                                  <span style={{background:'#064e3b', color:'#4ade80', padding:'4px 8px', borderRadius:'4px', fontSize:'0.85rem', display:'flex', alignItems:'center', width:'fit-content', gap:'5px'}}>
+                                      <FaTruck/> ENVÍO GRATIS
+                                  </span>
+                              ) : (
+                                  <span style={{color:'#38bdf8', fontWeight:'bold', fontSize:'1.1rem'}}>
+                                      {c.porcentaje}% OFF
+                                  </span>
+                              )}
+                          </td>
+
+                          <td>{c.fecha_expiracion || c.fechaVencimiento}</td>
+                          
                           <td>
                               {new Date(c.fecha_expiracion) < new Date() ? 
                                 <span className="badge-pedido cancelado">Vencido</span> : 
@@ -155,7 +180,7 @@ export default function AdminCupones() {
                           </td>
                       </tr>
                   ))}
-                  {cupones.length === 0 && <tr><td colSpan="5" style={{padding:'20px'}}>No hay cupones creados</td></tr>}
+                  {cupones.length === 0 && <tr><td colSpan="5" style={{padding:'20px', textAlign:'center'}}>No hay cupones creados</td></tr>}
               </tbody>
           </table>
       </div>

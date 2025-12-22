@@ -1,115 +1,95 @@
-import React, { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom"; 
-import { listarProductos, buscarProductos } from "../services/productoService";
-import { listarCategorias } from "../services/categoriaService";
-import ProductCard from "../components/ProductCard";
-import ProductModal from "../components/ProductModal";
-import "./Productos.css";
+import React, { useEffect, useState } from 'react';
+import { listarProductos } from '../services/productoService';
+import ProductCard from '../components/ProductCard';
+import { FaChevronLeft, FaChevronRight, FaBoxOpen, FaSpinner } from 'react-icons/fa';
+import './Productos.css';
 
 export default function Productos() {
-  const [productos, setProductos] = useState([]);
-  const [categorias, setCategorias] = useState([]);
-  const [productoSeleccionado, setProductoSeleccionado] = useState(null);
-  const [cargando, setCargando] = useState(false);
+    const [productos, setProductos] = useState([]);
+    const [cargando, setCargando] = useState(true);
+    
+    // Estados de paginación
+    const [page, setPage] = useState(1);
+    const [lastPage, setLastPage] = useState(1);
+    const [total, setTotal] = useState(0);
 
-  const [searchParams, setSearchParams] = useSearchParams();
-  const busquedaUrl = searchParams.get("buscar") || "";
-  const catUrl = searchParams.get("cat");
+    useEffect(() => {
+        // Cada vez que cambie la página, volvemos arriba y cargamos datos
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        cargarData();
+    }, [page]);
 
-  const [filtroNombre, setFiltroNombre] = useState(busquedaUrl);
-  const [filtroCategoria, setFiltroCategoria] = useState(catUrl ? Number(catUrl) : "");
-
-  useEffect(() => {
-    listarCategorias().then(data => {
-        const lista = data.data || (Array.isArray(data) ? data : []);
-        setCategorias(lista);
-    });
-  }, []);
-
-  useEffect(() => {
-    setFiltroNombre(busquedaUrl);
-    if (catUrl) setFiltroCategoria(Number(catUrl));
-    else setFiltroCategoria("");
-  }, [busquedaUrl, catUrl]);
-
-  useEffect(() => {
-    async function cargarDatos() {
-      setCargando(true);
-      try {
-        let data = [];
-        if (filtroNombre || filtroCategoria) {
-            const res = await buscarProductos(filtroNombre, filtroCategoria || null);
-            data = res.data || (Array.isArray(res) ? res : []);
-        } else {
-            const res = await listarProductos(0); 
-            data = res.data || res.content || (Array.isArray(res) ? res : []);
+    async function cargarData() {
+        setCargando(true);
+        try {
+            const res = await listarProductos(page);
+            // Laravel Paginate devuelve: res.data (items), res.last_page, res.total
+            setProductos(res.data || []);
+            setLastPage(res.last_page || 1);
+            setTotal(res.total || 0);
+        } catch (error) {
+            console.error("Error al cargar productos:", error);
+        } finally {
+            setCargando(false);
         }
-        setProductos(data);
-      } catch (e) {
-        console.error(e);
-        setProductos([]);
-      } finally {
-        setCargando(false);
-      }
     }
-    const timer = setTimeout(cargarDatos, 500);
-    return () => clearTimeout(timer);
-  }, [filtroNombre, filtroCategoria]);
 
-  const handleSearchChange = (e) => {
-      const valor = e.target.value;
-      setFiltroNombre(valor);
-      const params = {};
-      if (valor) params.buscar = valor;
-      if (filtroCategoria) params.cat = filtroCategoria;
-      setSearchParams(params);
-  };
+    if (cargando) {
+        return (
+            <div className="productos-loading">
+                <FaSpinner className="icon-spin" />
+                <p>Cargando catálogo de KB Collection...</p>
+            </div>
+        );
+    }
 
-  const handleCatChange = (e) => {
-      const valor = e.target.value;
-      setFiltroCategoria(valor);
-      const params = {};
-      if (filtroNombre) params.buscar = filtroNombre;
-      if (valor) params.cat = valor;
-      setSearchParams(params);
-  };
+    return (
+        <div className="productos-page">
+            <header className="productos-header">
+                <h1>Nuestros Productos</h1>
+                <p>{total} artículos encontrados</p>
+            </header>
 
-  return (
-    <div className="productos-page">
-      <h1>Catálogo</h1>
+            {productos.length > 0 ? (
+                <>
+                    <div className="productos-grid">
+                        {productos.map(prod => (
+                            <ProductCard key={prod.id} producto={prod} />
+                        ))}
+                    </div>
 
-      <div className="filtros">
-        <input 
-            type="text" 
-            placeholder="Buscar producto..." 
-            value={filtroNombre}
-            onChange={handleSearchChange}
-        />
-        <select value={filtroCategoria} onChange={handleCatChange}>
-          <option value="">Todas las categorías</option>
-          {categorias.map((cat) => (
-            <option key={cat.id} value={cat.id}>{cat.nombre}</option>
-          ))}
-        </select>
-      </div>
+                    {/* BOTONES DE PAGINACIÓN */}
+                    {lastPage > 1 && (
+                        <div className="pagination-container">
+                            <button 
+                                className="pagination-btn"
+                                disabled={page === 1} 
+                                onClick={() => setPage(prev => prev - 1)}
+                            >
+                                <FaChevronLeft /> Anterior
+                            </button>
 
-      {cargando ? <div style={{textAlign:'center', padding:'20px'}}>Cargando...</div> : (
-          <div className="galeria-container">
-            {productos.length === 0 ? (
-              <p style={{width:'100%', textAlign:'center'}}>No se encontraron productos.</p>
+                            <div className="pagination-pages">
+                                <span>Página <strong>{page}</strong> de {lastPage}</span>
+                            </div>
+
+                            <button 
+                                className="pagination-btn"
+                                disabled={page === lastPage} 
+                                onClick={() => setPage(prev => prev + 1)}
+                            >
+                                Siguiente <FaChevronRight />
+                            </button>
+                        </div>
+                    )}
+                </>
             ) : (
-              productos.map((prod) => (
-                <div key={prod.id} className="tarjeta-wrapper" onClick={() => setProductoSeleccionado(prod)}>
-                    <ProductCard producto={prod} />
+                <div className="productos-empty">
+                    <FaBoxOpen size={60} />
+                    <h3>No hay productos disponibles</h3>
+                    <p>Intenta recargar la página más tarde.</p>
                 </div>
-              ))
             )}
-          </div>
-      )}
-
-      {productoSeleccionado && (
-        <ProductModal producto={productoSeleccionado} onClose={() => setProductoSeleccionado(null)} />
-      )}
-    </div>
-  );
+        </div>
+    );
 }

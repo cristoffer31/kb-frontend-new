@@ -1,77 +1,105 @@
-/* --- CONFIGURACIÓN DE LA PÁGINA --- */
 .productos-page {
-  max-width: 1300px;
-  margin: 120px auto 40px; 
-  padding: 0 20px;
-  box-sizing: border-box;
+    padding: 2rem 5%;
+    min-height: 80vh;
 }
 
-/* --- FILTROS --- */
-.filtros {
-  margin-bottom: 40px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  background-color: #f8fafc;
-  padding: 20px;
-  border-radius: 8px;
-  justify-content: center; /* Centra los filtros */
+.productos-header {
+    text-align: center;
+    margin-bottom: 3rem;
 }
 
-.filtros input,
-.filtros select {
-  flex: 1;
-  min-width: 200px; /* Evita que los inputs se aplasten */
-  max-width: 400px; /* Evita que sean eternos en pantallas grandes */
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 16px;
+.productos-header h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 0.5rem;
 }
 
-/* --- SOLUCIÓN DE LA GALERÍA (FLEXBOX CONTROLADO) --- */
-.galeria-container {
-  display: flex;
-  flex-wrap: wrap;        /* Permite crear múltiples filas */
-  justify-content: center; /* CENTRA los productos si hay pocos (ej: solo 1) */
-  gap: 30px;              /* Espacio entre tarjetas */
-  width: 100%;
+.productos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 2rem;
+    margin-bottom: 4rem;
 }
 
-/* --- LA TARJETA INDIVIDUAL --- */
-.tarjeta-wrapper {
-  /* 1. Ancho base ideal */
-  flex-basis: 280px; 
-  
-  /* 2. Crecimiento controlado: */
-  flex-grow: 1; /* Permite crecer para llenar huecos vacíos */
-  
-  /* 3. Límites para que no se vea ni aplastada ni gigante */
-  min-width: 260px; /* Nunca será más angosta que esto (adiós al error de la foto) */
-  max-width: 350px; /* Nunca será más ancha que esto (para que no se estire sola) */
-  
-  cursor: pointer;
-  margin-bottom: 10px;
+/* Paginación */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+    margin-top: 2rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 50px;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 
-/* --- FUERZA BRUTA PARA EL PRODUCT CARD INTERNO --- */
-/* Esto asegura que tu componente ProductCard llene el wrapper */
-.tarjeta-wrapper > div,
-.tarjeta-wrapper .product-card {
-  width: 100% !important;
-  display: block !important;
-  height: 100%; /* Para que todas tengan la misma altura visual */
+.pagination-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.8rem 1.5rem;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
 }
 
-/* --- AJUSTES RESPONSIVOS --- */
-@media (max-width: 480px) {
-  .galeria-container {
-    gap: 15px;
-  }
-  
-  .tarjeta-wrapper {
-    /* En celular, que ocupe casi todo el ancho pero centrado */
-    min-width: 100%; 
-    max-width: 100%;
-  }
+.pagination-btn:hover:not(:disabled) {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+.pagination-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.pagination-pages {
+    font-size: 1rem;
+    color: #666;
+}
+
+.pagination-pages strong {
+    color: #007bff;
+}
+
+/* Estados de carga y vacío */
+.productos-loading, .productos-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 50vh;
+    text-align: center;
+}
+
+.icon-spin {
+    font-size: 3rem;
+    color: #007bff;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .productos-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 1rem;
+    }
+    
+    .pagination-btn span {
+        display: none; /* Oculta el texto en móviles para ahorrar espacio */
+    }
 }

@@ -30,7 +30,7 @@ export default function Checkout() {
     const [giro, setGiro] = useState("");
     
     // COSTOS / GPS
-    const [costoEnvio, setCostoEnvio] = useState(0);
+    const [costoEnvioBase, setCostoEnvioBase] = useState(0); // Renombrado a Base para claridad
     const [coordenadas, setCoordenadas] = useState(null);
     const [gpsError, setGpsError] = useState("");
     const [obteniendoGps, setObteniendoGps] = useState(false);
@@ -49,7 +49,13 @@ export default function Checkout() {
     // CÁLCULOS MATEMÁTICOS SEGUROS
     // ==========================================
     const subtotalSeguro = Number(total) || 0;
-    const envioSeguro = Number(costoEnvio) || 0;
+
+    // 1. LÓGICA DE ENVÍO GRATIS
+    const esEnvioGratis = cuponAplicado && cuponAplicado.es_envio_gratis;
+    
+    // Si hay cupón de envío gratis, el costo es 0, si no, es el de la zona
+    const envioSeguro = esEnvioGratis ? 0 : (Number(costoEnvioBase) || 0);
+    
     const descuentoSeguro = Number(descuentoDinero) || 0;
     const totalFinalPagar = Math.max(0, subtotalSeguro + envioSeguro - descuentoSeguro).toFixed(2);
 
@@ -69,26 +75,42 @@ export default function Checkout() {
         );
     };
 
-    // Cargar cupón desde el Carrito
+    // Cargar cupón desde el Carrito (si venía pre-cargado)
     useEffect(() => {
         if (location.state?.cupon) {
             setCodigoCupon(location.state.cupon);
-            if (location.state.descuento !== undefined) {
-                setDescuentoDinero(Number(location.state.descuento));
-                validarCuponApi(location.state.cupon).then(setCuponAplicado).catch(console.error);
-            }
+            // Re-validamos para asegurar que traemos la bandera de envío gratis
+            validarCuponApi(location.state.cupon).then(data => {
+                aplicarLogicaCupon(data);
+            }).catch(console.error);
         }
     }, [location.state]);
 
-    // Actualizar referencia de datos
+    // Función auxiliar para aplicar la lógica
+    const aplicarLogicaCupon = (data) => {
+        if (data.es_envio_gratis) {
+            setDescuentoDinero(0); // El descuento es el envío, no el producto
+        } else {
+            const valorCupon = Number(data.valor) || Number(data.porcentaje) || 0;
+            const ahorro = data.tipo === 'PORCENTAJE' ? (subtotalSeguro * valorCupon) / 100 : valorCupon;
+            setDescuentoDinero(ahorro);
+        }
+        setCuponAplicado(data);
+    };
+
+    // Actualizar referencia de datos para el pago
     useEffect(() => {
         datosRef.current = { 
-            departamento, ciudad, direccion, telefono, costoEnvio: envioSeguro, coordenadas, 
+            departamento, ciudad, direccion, telefono, 
+            costoEnvio: envioSeguro, // Aquí ya va 0 si es gratis
+            coordenadas, 
             items: carrito, 
-            tipoComprobante, nit, nrc, razonSocial, giro, cupon: cuponAplicado ? cuponAplicado.codigo : null 
+            tipoComprobante, nit, nrc, razonSocial, giro, 
+            cupon: cuponAplicado ? cuponAplicado.codigo : null 
         };
     }, [departamento, ciudad, direccion, telefono, envioSeguro, coordenadas, carrito, tipoComprobante, nit, nrc, razonSocial, giro, cuponAplicado]);
 
+    // Zonas
     useEffect(() => {
         listarZonas().then(data => setZonasDisponibles(Array.isArray(data) ? data : [])).catch(console.error);
     }, []);
@@ -96,11 +118,11 @@ export default function Checkout() {
     useEffect(() => {
         const zona = zonasDisponibles.find(z => z.departamento === departamento);
         if (zona) {
-            setCostoEnvio(Number(zona.tarifa) || 0); 
+            setCostoEnvioBase(Number(zona.tarifa) || 0); 
             const lista = zona.municipios?.toUpperCase() === "TODOS" ? null : zona.municipios?.split(",").map(m => m.trim());
             setMunicipiosPosibles(lista);
         } else {
-            setCostoEnvio(0);
+            setCostoEnvioBase(0);
             setMunicipiosPosibles([]);
         }
     }, [departamento, zonasDisponibles]);
@@ -110,10 +132,7 @@ export default function Checkout() {
         setErrorCupon("");
         try {
             const data = await validarCuponApi(codigoCupon);
-            const valorCupon = Number(data.valor) || Number(data.porcentaje) || 0;
-            const ahorro = data.tipo === 'PORCENTAJE' ? (subtotalSeguro * valorCupon) / 100 : valorCupon;
-            setDescuentoDinero(ahorro);
-            setCuponAplicado(data);
+            aplicarLogicaCupon(data);
         } catch (error) {
             setErrorCupon("Cupón no válido.");
             setCuponAplicado(null);
@@ -122,12 +141,11 @@ export default function Checkout() {
     };
 
     // ==========================================
-    // PROCESAR PAGO CON LINK DE BAC
+    // PROCESAR PAGO
     // ==========================================
     const manejarPagoBAC = async () => {
         const d = datosRef.current;
         
-        // Validación de campos
         if (!d.departamento || !d.direccion || !d.telefono) {
             setMensaje("⚠ Por favor completa los datos de envío.");
             return;
@@ -150,14 +168,10 @@ export default function Checkout() {
                 }))
             };
 
-            // 1. Guardar el pedido en el backend
             await crearPedido(payload);
-            
-            // 2. Vaciar carrito local
             vaciarCarrito(); 
 
-            // 3. Redirigir al link de BAC
-            // Reemplaza con tu URL real de Compra Click / BAC
+            // Link de BAC
             const linkBAC = "https://pagos.baccredomatic.com/TU_LINK_AQUI"; 
             window.location.href = linkBAC;
 
@@ -237,8 +251,22 @@ export default function Checkout() {
                         </div>
                         <div className="summary-details">
                             <div className="summary-row"><span>Subtotal</span> <span>${subtotalSeguro.toFixed(2)}</span></div>
+                            
+                            {/* Descuento Monetario */}
                             {descuentoSeguro > 0 && <div className="summary-row discount"><span>Descuento</span> <span>- ${descuentoSeguro.toFixed(2)}</span></div>}
-                            <div className="summary-row"><span><FaTruck/> Envío</span> <span>${envioSeguro.toFixed(2)}</span></div>
+                            
+                            {/* Envío con lógica visual de Gratis */}
+                            <div className="summary-row">
+                                <span><FaTruck/> Envío</span> 
+                                <span>
+                                    {esEnvioGratis ? (
+                                        <span style={{color:'#4ade80', fontWeight:'bold', background:'#064e3b', padding:'2px 6px', borderRadius:'4px', fontSize:'0.9rem'}}>GRATIS (Cupón)</span>
+                                    ) : (
+                                        `$${envioSeguro.toFixed(2)}`
+                                    )}
+                                </span>
+                            </div>
+                            
                             <div className="divider"></div>
                             <div className="summary-total"><span>Total</span> <span>${totalFinalPagar}</span></div>
                         </div>

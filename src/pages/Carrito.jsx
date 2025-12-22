@@ -1,10 +1,10 @@
-import React, { useContext, useState, useMemo } from "react"; // Añadimos useMemo para eficiencia
+import React, { useContext, useState, useMemo } from "react"; 
 import { useNavigate, Link } from "react-router-dom";
 import api from "../services/api";
 import "./Carrito.css";
 import { CarritoContext } from "../context/CarritoContext";
 import { AuthContext } from "../context/AuthContext";
-import { FaTrash, FaArrowRight, FaShoppingBag, FaMinus, FaPlus, FaTag, FaBoxOpen, FaTicketAlt, FaTimes } from "react-icons/fa";
+import { FaTrash, FaArrowRight, FaShoppingBag, FaMinus, FaPlus, FaTag, FaTicketAlt, FaTimes, FaTruck } from "react-icons/fa";
 
 export default function Carrito() {
   const { carrito, actualizarCantidad, eliminarProducto, vaciarCarrito, total, cantidadTotal, obtenerPrecioUnitario } = useContext(CarritoContext);
@@ -25,39 +25,38 @@ export default function Carrito() {
         const res = await api.get(`/cupones/validar/${codigoCupon.trim()}`);
         const data = res.data;
 
-        // --- SOLUCIÓN AL NULL ---
-        // Intentamos obtener el valor de cualquier propiedad posible que mande el backend
-        const valorNumerico = Number(data.valor) || Number(data.porcentaje) || 0;
-        const subtotalActual = Number(total) || 0;
-        
-        let ahorroCalculado = 0;
+        // 1. SI ES ENVÍO GRATIS
+        if (data.es_envio_gratis) {
+            setDescuentoValor(0); // El descuento en productos es 0
+            setCuponAplicado({
+                ...data,
+                esEnvioGratis: true // Aseguramos la bandera
+            });
+        } 
+        // 2. SI ES DESCUENTO NORMAL
+        else {
+            const valorNumerico = Number(data.valor) || Number(data.porcentaje) || 0;
+            const subtotalActual = Number(total) || 0;
+            let ahorroCalculado = data.tipo === 'PORCENTAJE' 
+                ? (subtotalActual * valorNumerico) / 100 
+                : valorNumerico;
 
-        if (data.tipo === 'PORCENTAJE') {
-            ahorroCalculado = (subtotalActual * valorNumerico) / 100;
-        } else {
-            ahorroCalculado = valorNumerico;
+            setDescuentoValor(Math.min(ahorroCalculado, subtotalActual));
+            setCuponAplicado({
+                ...data,
+                esEnvioGratis: false,
+                valorMostrado: valorNumerico
+            });
         }
-
-        // Si el ahorro es 0 o NaN, algo anda mal con el dato del backend
-        if (!ahorroCalculado || isNaN(ahorroCalculado)) {
-            console.error("El backend mandó un valor inválido:", data);
-        }
-
-        const ahorroFinal = Math.min(ahorroCalculado, subtotalActual);
-
-        setDescuentoValor(ahorroFinal);
-        setCuponAplicado({
-            ...data,
-            valorMostrado: valorNumerico // Guardamos el número limpio para el texto
-        });
         
     } catch (error) {
         setDescuentoValor(0);
         setCuponAplicado(null);
+        alert("Cupón no válido o expirado");
     } finally {
         setCargandoCupon(false);
     }
-};
+  };
 
   const quitarCupon = () => {
     setCuponAplicado(null);
@@ -65,8 +64,7 @@ export default function Carrito() {
     setCodigoCupon("");
   };
 
-  // --- CÁLCULOS SEGUROS PARA EL RENDER ---
-  // Usamos useMemo para que el total se actualice SIEMPRE que cambie el total del carrito o el descuento
+  // --- CÁLCULOS SEGUROS ---
   const { subtotalSeguro, totalConDescuento } = useMemo(() => {
     const s = Number(total) || 0;
     const d = Number(descuentoValor) || 0;
@@ -81,7 +79,6 @@ export default function Carrito() {
       <div className="carrito-vacio-container">
         <div className="icono-vacio"><FaShoppingBag /></div>
         <h2>Tu carrito está vacío</h2>
-        <p>¿No sabes qué comprar? ¡Miles de productos te esperan!</p>
         <Link to="/productos" className="btn-ir-tienda">Ir a la Tienda</Link>
       </div>
     );
@@ -98,25 +95,16 @@ export default function Carrito() {
         <div className="carrito-items">
           {carrito.map((prod, index) => {
             const img = prod.imagenUrl || prod.imagen || "/placeholder.png";
-            const nombre = prod.nombre || "Producto";
-            const precioBase = parseFloat(prod.precio || 0);
             const precioFinal = obtenerPrecioUnitario(prod, prod.cantidad);
             const subtotalItem = precioFinal * prod.cantidad;
 
             return (
               <div key={prod.id || index} className="item-card">
-                <div className="item-img-wrapper">
-                  <img src={img} alt={nombre} />
-                </div>
+                <div className="item-img-wrapper"><img src={img} alt={prod.nombre} /></div>
                 <div className="item-content">
                   <div className="item-main-info">
-                      <div className="info-header">
-                          <h3>{nombre}</h3>
-                      </div>
-                      <div className="item-precios">
-                        {precioFinal < precioBase && <span className="precio-tachado">${precioBase.toFixed(2)}</span>}
-                        <span className="precio-actual">${precioFinal.toFixed(2)}</span>
-                      </div>
+                      <h3>{prod.nombre}</h3>
+                      <span className="precio-actual">${precioFinal.toFixed(2)}</span>
                   </div>
                   <div className="item-actions">
                     <div className="qty-selector-modern">
@@ -128,9 +116,7 @@ export default function Carrito() {
                         <span className="label-subtotal">Subtotal:</span>
                         <span className="valor-subtotal">${subtotalItem.toFixed(2)}</span>
                     </div>
-                    <button className="btn-trash-icon" onClick={() => eliminarProducto(prod.id)}>
-                        <FaTrash />
-                    </button>
+                    <button className="btn-trash-icon" onClick={() => eliminarProducto(prod.id)}><FaTrash /></button>
                   </div>
                 </div>
               </div>
@@ -142,7 +128,6 @@ export default function Carrito() {
           <div className="resumen-card">
             <h2>Resumen del Pedido</h2>
             
-            {/* SECCIÓN DE CUPÓN */}
             <div className="cupon-container">
                 <div className="cupon-input-group">
                     <FaTicketAlt className="cupon-icon" />
@@ -161,12 +146,19 @@ export default function Carrito() {
                         <button className="btn-remove-cupon" onClick={quitarCupon}><FaTimes /></button>
                     )}
                 </div>
+                
+                {/* MENSAJE DE ÉXITO DINÁMICO */}
                 {cuponAplicado && (
-    <p className="cupon-success-msg">
-        ✅ Cupón <strong>{cuponAplicado.codigo}</strong> aplicado 
-        ({cuponAplicado.porcentaje}% OFF)
-    </p>
-)}
+                    <p className="cupon-success-msg">
+                        {cuponAplicado.esEnvioGratis ? (
+                            <span style={{color: '#059669', display:'flex', alignItems:'center', gap:'5px'}}>
+                                <FaTruck/> ¡Envío Gratis Activado!
+                            </span>
+                        ) : (
+                            <span>✅ Cupón <strong>{cuponAplicado.codigo}</strong> aplicado</span>
+                        )}
+                    </p>
+                )}
             </div>
 
             <div className="resumen-detalles">
@@ -174,22 +166,29 @@ export default function Carrito() {
                     <span>Subtotal</span>
                     <span>${subtotalSeguro.toFixed(2)}</span>
                 </div>
+                
+                {/* MOSTRAR DESCUENTO SI EXISTE */}
                 {descuentoValor > 0 && (
                     <div className="resumen-fila descuento-fila">
                         <span>Descuento</span>
                         <span className="ahorro-txt">- ${descuentoValor.toFixed(2)}</span>
                     </div>
                 )}
+
+                {/* FILA DE ENVÍO INTELIGENTE */}
                 <div className="resumen-fila envio">
                     <span>Envío</span>
-                    <span className="Validar">Calculado en el pago</span>
+                    {cuponAplicado?.esEnvioGratis ? (
+                        <span style={{color:'#059669', fontWeight:'bold'}}>GRATIS (Al pagar)</span>
+                    ) : (
+                        <span className="Validar">Calculado en el pago</span>
+                    )}
                 </div>
             </div>
 
             <div className="divider"></div>
             <div className="resumen-total">
-              <span>Total a Pagar</span>
-              {/* AQUÍ SE MUESTRA EL TOTAL ACTUALIZADO */}
+              <span>Total Estimado</span>
               <div className="total-precio">${totalConDescuento.toFixed(2)}</div>
             </div>
             
@@ -202,7 +201,7 @@ export default function Carrito() {
                     } 
                 })}
             >
-              {isLogged ? "Proceder al Pago" : "Iniciar Sesión para Pagar"} <FaArrowRight />
+              {isLogged ? "Proceder al Pago" : "Iniciar Sesión"} <FaArrowRight />
             </button>
           </div>
         </div>
