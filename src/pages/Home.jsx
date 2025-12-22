@@ -34,9 +34,32 @@ export default function Home() {
           listarCategorias()
         ]);
         
-        setProductos(resProds.data || (Array.isArray(resProds) ? resProds : []));
-        setOfertas(resOfertas.data || (Array.isArray(resOfertas) ? resOfertas : []));
-        setCategorias(resCats.data || (Array.isArray(resCats) ? resCats : []));
+        // --- CORRECCIÓN AQUÍ ---
+        
+        // 1. Productos: Verificamos si vienen paginados (.data.data) o simples (.data)
+        const prodsData = resProds.data;
+        if (prodsData && prodsData.data && Array.isArray(prodsData.data)) {
+             setProductos(prodsData.data); // Caso Paginación (Laravel paginate)
+        } else if (Array.isArray(prodsData)) {
+             setProductos(prodsData);      // Caso Lista simple (Laravel get)
+        } else {
+             setProductos([]);             // Por seguridad, si falla
+        }
+
+        // 2. Ofertas: Misma lógica
+        const ofertasData = resOfertas.data;
+        if (ofertasData && ofertasData.data && Array.isArray(ofertasData.data)) {
+             setOfertas(ofertasData.data);
+        } else if (Array.isArray(ofertasData)) {
+             setOfertas(ofertasData);
+        } else {
+             setOfertas([]);
+        }
+
+        // 3. Categorías
+        const catsData = resCats.data;
+        setCategorias(Array.isArray(catsData) ? catsData : []);
+        
       } catch (err) {
         console.error("Error al cargar datos de la Home:", err);
       }
