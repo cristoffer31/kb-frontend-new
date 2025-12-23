@@ -4,6 +4,7 @@ import { AuthContext } from "../context/AuthContext";
 import { crearPedido } from "../services/pedidoService";
 import { validarCuponApi } from "../services/CuponService"; 
 import { listarZonas } from "../services/zonaService"; 
+import api from "../services/api"; // <--- IMPORTANTE: Importamos api para pedir el link
 import { useNavigate, useLocation } from "react-router-dom";
 import "./Checkout.css";
 import { FaLocationArrow, FaMapMarkerAlt, FaFileInvoiceDollar, FaTicketAlt, FaShieldAlt, FaTruck, FaCreditCard } from "react-icons/fa"; 
@@ -30,7 +31,7 @@ export default function Checkout() {
     const [giro, setGiro] = useState("");
     
     // COSTOS / GPS
-    const [costoEnvioBase, setCostoEnvioBase] = useState(0); // Renombrado a Base para claridad
+    const [costoEnvioBase, setCostoEnvioBase] = useState(0); 
     const [coordenadas, setCoordenadas] = useState(null);
     const [gpsError, setGpsError] = useState("");
     const [obteniendoGps, setObteniendoGps] = useState(false);
@@ -46,16 +47,11 @@ export default function Checkout() {
     const datosRef = useRef({}); 
 
     // ==========================================
-    // CÁLCULOS MATEMÁTICOS SEGUROS
+    // CÁLCULOS
     // ==========================================
     const subtotalSeguro = Number(total) || 0;
-
-    // 1. LÓGICA DE ENVÍO GRATIS
     const esEnvioGratis = cuponAplicado && cuponAplicado.es_envio_gratis;
-    
-    // Si hay cupón de envío gratis, el costo es 0, si no, es el de la zona
     const envioSeguro = esEnvioGratis ? 0 : (Number(costoEnvioBase) || 0);
-    
     const descuentoSeguro = Number(descuentoDinero) || 0;
     const totalFinalPagar = Math.max(0, subtotalSeguro + envioSeguro - descuentoSeguro).toFixed(2);
 
@@ -75,43 +71,12 @@ export default function Checkout() {
         );
     };
 
-    // Cargar cupón desde el Carrito (si venía pre-cargado)
+    // Efectos de carga (Cupones, Zonas)
     useEffect(() => {
         if (location.state?.cupon) {
             setCodigoCupon(location.state.cupon);
-            // Re-validamos para asegurar que traemos la bandera de envío gratis
-            validarCuponApi(location.state.cupon).then(data => {
-                aplicarLogicaCupon(data);
-            }).catch(console.error);
+            validarCuponApi(location.state.cupon).then(data => aplicarLogicaCupon(data)).catch(console.error);
         }
-    }, [location.state]);
-
-    // Función auxiliar para aplicar la lógica
-    const aplicarLogicaCupon = (data) => {
-        if (data.es_envio_gratis) {
-            setDescuentoDinero(0); // El descuento es el envío, no el producto
-        } else {
-            const valorCupon = Number(data.valor) || Number(data.porcentaje) || 0;
-            const ahorro = data.tipo === 'PORCENTAJE' ? (subtotalSeguro * valorCupon) / 100 : valorCupon;
-            setDescuentoDinero(ahorro);
-        }
-        setCuponAplicado(data);
-    };
-
-    // Actualizar referencia de datos para el pago
-    useEffect(() => {
-        datosRef.current = { 
-            departamento, ciudad, direccion, telefono, 
-            costoEnvio: envioSeguro, // Aquí ya va 0 si es gratis
-            coordenadas, 
-            items: carrito, 
-            tipoComprobante, nit, nrc, razonSocial, giro, 
-            cupon: cuponAplicado ? cuponAplicado.codigo : null 
-        };
-    }, [departamento, ciudad, direccion, telefono, envioSeguro, coordenadas, carrito, tipoComprobante, nit, nrc, razonSocial, giro, cuponAplicado]);
-
-    // Zonas
-    useEffect(() => {
         listarZonas().then(data => setZonasDisponibles(Array.isArray(data) ? data : [])).catch(console.error);
     }, []);
 
@@ -127,6 +92,16 @@ export default function Checkout() {
         }
     }, [departamento, zonasDisponibles]);
 
+    const aplicarLogicaCupon = (data) => {
+        if (data.es_envio_gratis) setDescuentoDinero(0);
+        else {
+            const valorCupon = Number(data.valor) || Number(data.porcentaje) || 0;
+            const ahorro = data.tipo === 'PORCENTAJE' ? (subtotalSeguro * valorCupon) / 100 : valorCupon;
+            setDescuentoDinero(ahorro);
+        }
+        setCuponAplicado(data);
+    };
+
     const handleAplicarCupon = async () => {
         if (!codigoCupon.trim()) return;
         setErrorCupon("");
@@ -140,25 +115,40 @@ export default function Checkout() {
         }
     };
 
+    // Actualizar Refs
+    useEffect(() => {
+        datosRef.current = { 
+            departamento, ciudad, direccion, telefono, 
+            costoEnvio: envioSeguro, 
+            coordenadas, 
+            items: carrito, 
+            tipoComprobante, nit, nrc, razonSocial, giro, 
+            cupon: cuponAplicado ? cuponAplicado.codigo : null 
+        };
+    }, [departamento, ciudad, direccion, telefono, envioSeguro, coordenadas, carrito, tipoComprobante, nit, nrc, razonSocial, giro, cuponAplicado]);
+
     // ==========================================
-    // PROCESAR PAGO
+    // LÓGICA DE PAGO CON WOMPI (CORREGIDA)
     // ==========================================
-    const manejarPagoBAC = async () => {
+    const manejarPagoWompi = async () => {
         const d = datosRef.current;
         
+        // 1. Validaciones
         if (!d.departamento || !d.direccion || !d.telefono) {
-            setMensaje("⚠ Por favor completa los datos de envío.");
+            setMensaje("⚠ Por favor completa Departamento, Dirección y Teléfono.");
             return;
         }
 
         setProcesando(true);
-        setMensaje("");
+        setMensaje("⏳ Registrando pedido y conectando con Wompi...");
 
         try {
+            // 2. CREAR PEDIDO EN LARAVEL PRIMERO (Estado: Pendiente)
+            // Esto asegura que la compra exista en tu BD antes de ir a pagar
             const payload = {
                 ...d,
-                metodoPago: "LINK_BAC",
-                estado: "Pendiente de Pago",
+                metodoPago: "WOMPI", // Marcamos que es Wompi
+                estado: "Pendiente de Pago", // Estado inicial seguro
                 descuento: descuentoSeguro,
                 total: totalFinalPagar,
                 items: d.items.map(it => ({
@@ -168,15 +158,27 @@ export default function Checkout() {
                 }))
             };
 
-            await crearPedido(payload);
-            vaciarCarrito(); 
+            await crearPedido(payload); // <--- ¡AQUÍ SE GUARDA!
+        
+// Nota: Dependiendo de tu servicio, el ID puede venir en respuestaPedido.data.id o respuestaPedido.id
+           const pedidoIdCreado = respuestaPedido.data?.id || respuestaPedido.id;
+           
+            const { data } = await api.post('/wompi/link', { 
+                monto: totalFinalPagar,
+                pedido_id: pedidoIdCreado   
+            });
 
-            // Link de BAC
-            const linkBAC = "https://pagos.baccredomatic.com/TU_LINK_AQUI"; 
-            window.location.href = linkBAC;
+            if (data.url_pago) {
+                // 4. LIMPIAR CARRITO Y REDIRIGIR
+                vaciarCarrito(); 
+                window.location.href = data.url_pago; // Nos vamos a Wompi
+            } else {
+                throw new Error("No se recibió URL de pago");
+            }
 
         } catch (e) { 
-            setMensaje("⚠ Error al registrar pedido. Intenta nuevamente."); 
+            console.error(e);
+            setMensaje("⚠ Hubo un error al procesar. Si el pedido se guardó, búscalo en 'Mis Pedidos'."); 
             setProcesando(false);
         }
     };
@@ -185,6 +187,7 @@ export default function Checkout() {
         <div className="checkout-page">
             <h1 className="checkout-main-title">Finalizar Compra</h1>
             <div className="checkout-layout">
+                {/* FORMULARIO DE ENVÍO */}
                 <div className="checkout-form-col">
                     <div className="checkout-card">
                         <div className="card-header"><FaMapMarkerAlt className="card-icon" /> <h3>Dirección de Envío</h3></div>
@@ -239,6 +242,7 @@ export default function Checkout() {
                     </div>
                 </div>
 
+                {/* RESUMEN Y PAGO */}
                 <div className="checkout-summary-col">
                     <div className="checkout-card summary-card">
                         <h3>Resumen del Pedido</h3>
@@ -251,22 +255,11 @@ export default function Checkout() {
                         </div>
                         <div className="summary-details">
                             <div className="summary-row"><span>Subtotal</span> <span>${subtotalSeguro.toFixed(2)}</span></div>
-                            
-                            {/* Descuento Monetario */}
                             {descuentoSeguro > 0 && <div className="summary-row discount"><span>Descuento</span> <span>- ${descuentoSeguro.toFixed(2)}</span></div>}
-                            
-                            {/* Envío con lógica visual de Gratis */}
                             <div className="summary-row">
                                 <span><FaTruck/> Envío</span> 
-                                <span>
-                                    {esEnvioGratis ? (
-                                        <span style={{color:'#4ade80', fontWeight:'bold', background:'#064e3b', padding:'2px 6px', borderRadius:'4px', fontSize:'0.9rem'}}>GRATIS (Cupón)</span>
-                                    ) : (
-                                        `$${envioSeguro.toFixed(2)}`
-                                    )}
-                                </span>
+                                <span>{esEnvioGratis ? <span className="free-tag">GRATIS</span> : `$${envioSeguro.toFixed(2)}`}</span>
                             </div>
-                            
                             <div className="divider"></div>
                             <div className="summary-total"><span>Total</span> <span>${totalFinalPagar}</span></div>
                         </div>
@@ -274,16 +267,16 @@ export default function Checkout() {
                         <div className="payment-section">
                             <button 
                                 className="btn-pago-bac" 
-                                onClick={manejarPagoBAC} 
+                                onClick={manejarPagoWompi} // <--- NUEVA FUNCIÓN
                                 disabled={procesando}
                             >
                                 <FaCreditCard style={{marginRight: '10px'}} />
-                                {procesando ? "Procesando..." : `Pagar con Tarjeta $${totalFinalPagar}`}
+                                {procesando ? "Conectando..." : `Pagar con Tarjeta $${totalFinalPagar}`}
                             </button>
-                            <div className="secure-badge"><FaShieldAlt /> Transacción segura via BAC</div>
+                            <div className="secure-badge"><FaShieldAlt /> Pagos seguros por Wompi El Salvador</div>
                         </div>
 
-                        {mensaje && <div className={`checkout-msg ${mensaje.includes('✅') ? 'success' : 'error'}`}>{mensaje}</div>}
+                        {mensaje && <div className={`checkout-msg ${mensaje.includes('⚠') ? 'error' : 'info'}`}>{mensaje}</div>}
                     </div>
                 </div>
             </div>

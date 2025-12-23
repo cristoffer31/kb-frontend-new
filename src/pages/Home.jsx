@@ -15,7 +15,7 @@ import { listarCategorias } from "../services/categoriaService";
 
 import "./Home.css";
 
-const BASE_URL = import.meta.env.VITE_STORAGE_URL || "http://localhost:8000/storage/";
+const BASE_URL = import.meta.env.VITE_STORAGE_URL || "http://127.0.0.1:8000/storage/";
 
 export default function Home() {
   const [productos, setProductos] = useState([]);

@@ -1,27 +1,88 @@
 import React, { useEffect, useState } from "react";
 import { listarMisPedidos } from "../services/pedidoService";
+import api from "../services/api"; // Importamos API para validar el pago
+import { useLocation, useNavigate } from "react-router-dom"; // Hooks de navegación
 import { 
     FaBoxOpen, FaClock, FaShippingFast, FaCheckCircle, FaTimesCircle, 
-    FaEye, FaMapMarkerAlt, FaTimes, FaReceipt, FaMobileAlt 
+    FaEye, FaMapMarkerAlt, FaTimes, FaReceipt, FaMobileAlt, FaSpinner, FaSync 
 } from "react-icons/fa";
-// Asegúrate de que tu CSS no esté forzando fondos oscuros globales
 import "./MisPedidos.css"; 
 
 export default function MisPedidos() {
   const [pedidos, setPedidos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
+  
+  // --- Estados para manejar el retorno de Wompi ---
+  const [verificandoWompi, setVerificandoWompi] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     cargar();
+    verificarRetornoWompi(); // Verificamos si venimos de pagar
   }, []);
+
+  // --- 1. VALIDACIÓN AUTOMÁTICA (Al regresar de Wompi) ---
+  const verificarRetornoWompi = async () => {
+      const params = new URLSearchParams(location.search);
+      const idTransaccion = params.get("idTransaccion");
+
+      if (idTransaccion) {
+          setVerificandoWompi(true);
+          try {
+              // Preguntamos al Backend si esta transacción es real
+              const { data } = await api.get(`/api/wompi/validar?id_transaccion=${idTransaccion}`);
+              
+              if (data.status === 'APPROVED') {
+                  alert("✅ ¡Pago Confirmado! Tu pedido ha sido pagado exitosamente.");
+              } else {
+                  alert("⚠ El pago no fue aprobado o está pendiente de validación bancaria.");
+              }
+              
+              // Limpiamos la URL
+              navigate("/mis-pedidos", { replace: true });
+              // Recargamos la lista
+              cargar();
+
+          } catch (error) {
+              console.error("Error validando Wompi", error);
+              navigate("/mis-pedidos", { replace: true });
+          } finally {
+              setVerificandoWompi(false);
+          }
+      }
+  };
+
+  // --- 2. VALIDACIÓN MANUAL (Botón "Verificar Pago") ---
+  const verificarEstadoManual = async (pedido) => {
+    if(!pedido.id) return;
+    
+    try {
+        setVerificandoWompi(true);
+        // Nota: Asegúrate de tener esta ruta en tu backend que busque por ID del pedido
+        // Si no la tienes, esto dará error 404, pero sirve como base.
+        const { data } = await api.get(`/api/wompi/validar-orden/${pedido.id}`);
+        
+        if (data.status === 'APPROVED') {
+            alert("✅ ¡Confirmado! Hemos actualizado tu pago.");
+            cargar(); // Recargamos la lista para ver el cambio a 'Pagado'
+        } else {
+            alert("ℹ El pago aún aparece como pendiente en el sistema del banco.");
+        }
+    } catch (error) {
+        console.error(error);
+        alert("No se pudo verificar el estado en este momento. Intenta recargar la página.");
+    } finally {
+        setVerificandoWompi(false);
+    }
+  };
 
   async function cargar() {
     try {
       const respuesta = await listarMisPedidos();
       
       let datosEncontrados = [];
-      // Lógica universal para encontrar el array de pedidos
       if (respuesta && Array.isArray(respuesta.data)) {
           datosEncontrados = respuesta.data;
       } else if (respuesta && respuesta.data && Array.isArray(respuesta.data.data)) {
@@ -42,13 +103,13 @@ export default function MisPedidos() {
 
   const getEstadoBadge = (estado) => {
       const est = (estado || "PENDIENTE").toUpperCase();
-      // Colores ajustados para fondo blanco
       let color = "#64748b"; 
       let bg = "#f1f5f9";
       let icon = <FaClock/>;
 
-      if(est.includes("PAGO")) { color = "#be123c"; bg="#fff1f2"; icon = <FaClock/>; } 
-      else if(est === "PENDIENTE") { color = "#b45309"; bg="#fffbeb"; icon = <FaClock/>; }
+      // Agregamos estado "Preparando Pedido" que es el pagado exitoso
+      if(est.includes("PAGO") || est.includes("PREPARANDO")) { color = "#be123c"; bg="#fff1f2"; icon = <FaCheckCircle/>; } 
+      else if(est.includes("PENDIENTE")) { color = "#b45309"; bg="#fffbeb"; icon = <FaClock/>; } // Pendiente de Pago
       else if(est === "ENVIADO") { color = "#1d4ed8"; bg="#eff6ff"; icon = <FaShippingFast/>; }
       else if(est === "ENTREGADO") { color = "#15803d"; bg="#f0fdf4"; icon = <FaCheckCircle/>; }
       else if(est === "CANCELADO") { color = "#b91c1c"; bg="#fef2f2"; icon = <FaTimesCircle/>; }
@@ -71,11 +132,23 @@ export default function MisPedidos() {
       setPedidoSeleccionado(pedido);
   };
 
-  if (cargando) return <div style={{padding:'50px', textAlign:'center', color:'#666'}}>Cargando historial...</div>;
+  if (cargando && !verificandoWompi) return <div style={{padding:'50px', textAlign:'center', color:'#666'}}>Cargando historial...</div>;
 
   return (
     <div className="mis-pedidos-page" style={{padding: '30px 20px', maxWidth: '1000px', margin: '0 auto'}}>
       
+      {/* --- BANNER DE VERIFICACIÓN DE PAGO --- */}
+      {verificandoWompi && (
+        <div style={{
+            background:'#eff6ff', border:'1px solid #bfdbfe', color:'#1e40af',
+            padding:'15px', borderRadius:'8px', marginBottom:'20px',
+            display:'flex', alignItems:'center', justifyContent:'center', gap:'10px'
+        }}>
+            <FaSpinner className="spin-animation" /> Verificando estado de tu pago con el banco...
+            <style>{`.spin-animation { animation: spin 1s linear infinite; } @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+        </div>
+      )}
+
       <div style={{borderBottom:'1px solid #e2e8f0', paddingBottom:'15px', marginBottom:'25px'}}>
         <h2 style={{color: '#1e293b', margin: 0, display:'flex', alignItems:'center', gap:'10px'}}>
             <FaBoxOpen style={{color:'#3b82f6'}}/> Mis Pedidos
@@ -124,6 +197,23 @@ export default function MisPedidos() {
                               ${Number(p.total).toFixed(2)}
                           </div>
                           
+                          {/* --- BOTÓN NUEVO: VERIFICACIÓN MANUAL --- */}
+                          {/* Solo aparece si el pedido sigue pendiente */}
+                          {(p.estado === "Pendiente de Pago" || p.estado === "Pendiente") && (
+                              <button 
+                                onClick={() => verificarEstadoManual(p)}
+                                style={{
+                                    background: '#fffbeb', color: '#b45309', 
+                                    border: '1px solid #b45309', 
+                                    padding: '8px 16px', borderRadius: '6px', cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem',
+                                    fontWeight: '600', marginBottom: '5px'
+                                }}
+                              >
+                                  <FaSync /> Verificar Pago
+                              </button>
+                          )}
+
                           <button 
                             onClick={() => abrirDetalles(p)}
                             style={{
@@ -220,31 +310,31 @@ export default function MisPedidos() {
 
                     {/* Totales */}
                     <div style={{marginTop: '20px', paddingTop: '20px', borderTop: '2px dashed #e2e8f0'}}>
-                         <div style={{display: 'flex', justifyContent: 'space-between', color: '#64748b', marginBottom: '8px', fontSize:'0.95rem'}}>
-                             <span>Subtotal</span>
-                             <span>${(Number(pedidoSeleccionado.total) + Number(pedidoSeleccionado.descuento) - Number(pedidoSeleccionado.costo_envio)).toFixed(2)}</span>
-                         </div>
-                         
-                         <div style={{display: 'flex', justifyContent: 'space-between', color: '#64748b', marginBottom: '8px', fontSize:'0.95rem'}}>
-                             <span>Envío</span>
-                             {Number(pedidoSeleccionado.costo_envio) === 0 ? (
-                                 <span style={{color:'#16a34a', fontWeight:'bold'}}>GRATIS</span>
-                             ) : (
-                                 <span>${Number(pedidoSeleccionado.costo_envio).toFixed(2)}</span>
-                             )}
-                         </div>
+                          <div style={{display: 'flex', justifyContent: 'space-between', color: '#64748b', marginBottom: '8px', fontSize:'0.95rem'}}>
+                              <span>Subtotal</span>
+                              <span>${(Number(pedidoSeleccionado.total) + Number(pedidoSeleccionado.descuento) - Number(pedidoSeleccionado.costo_envio)).toFixed(2)}</span>
+                          </div>
+                          
+                          <div style={{display: 'flex', justifyContent: 'space-between', color: '#64748b', marginBottom: '8px', fontSize:'0.95rem'}}>
+                              <span>Envío</span>
+                              {Number(pedidoSeleccionado.costo_envio) === 0 ? (
+                                  <span style={{color:'#16a34a', fontWeight:'bold'}}>GRATIS</span>
+                              ) : (
+                                  <span>${Number(pedidoSeleccionado.costo_envio).toFixed(2)}</span>
+                              )}
+                          </div>
 
-                         {Number(pedidoSeleccionado.descuento) > 0 && (
-                             <div style={{display: 'flex', justifyContent: 'space-between', color: '#ef4444', marginBottom: '8px', fontSize:'0.95rem'}}>
-                                 <span>Descuento</span>
-                                 <span>-${Number(pedidoSeleccionado.descuento).toFixed(2)}</span>
-                             </div>
-                         )}
-                         
-                         <div style={{display: 'flex', justifyContent: 'space-between', color: '#0f172a', fontSize: '1.3rem', fontWeight: '800', marginTop: '15px', paddingTop:'15px', borderTop:'1px solid #f1f5f9'}}>
-                             <span>Total</span>
-                             <span>${Number(pedidoSeleccionado.total).toFixed(2)}</span>
-                         </div>
+                          {Number(pedidoSeleccionado.descuento) > 0 && (
+                              <div style={{display: 'flex', justifyContent: 'space-between', color: '#ef4444', marginBottom: '8px', fontSize:'0.95rem'}}>
+                                  <span>Descuento</span>
+                                  <span>-${Number(pedidoSeleccionado.descuento).toFixed(2)}</span>
+                              </div>
+                          )}
+                          
+                          <div style={{display: 'flex', justifyContent: 'space-between', color: '#0f172a', fontSize: '1.3rem', fontWeight: '800', marginTop: '15px', paddingTop:'15px', borderTop:'1px solid #f1f5f9'}}>
+                              <span>Total</span>
+                              <span>${Number(pedidoSeleccionado.total).toFixed(2)}</span>
+                          </div>
                     </div>
 
                 </div>

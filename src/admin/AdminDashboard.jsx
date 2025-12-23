@@ -139,7 +139,7 @@ export default function AdminDashboard() {
         <div className={`d-card ${stats.pendientesBAC > 0 ? 'red-alert' : 'green'}`}>
             <div className="icon"><FaCreditCard /></div>
             <div className="info">
-                <h3>Pendientes BAC</h3>
+                <h3>Pendientes Wompi</h3>
                 <p>{stats.pendientesBAC}</p>
             </div>
         </div>

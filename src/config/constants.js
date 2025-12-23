@@ -1,4 +1,4 @@
-export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 export const STORAGE_URL = import.meta.env.VITE_STORAGE_URL || "http://localhost:8000/storage/";
 export const BAC_LINK_PAGO = import.meta.env.VITE_BAC_LINK || "https://pagos.baccredomatic.com/TU_LINK_AQUI";
 

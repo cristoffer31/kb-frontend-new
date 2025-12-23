@@ -12,22 +12,24 @@ export default function Carousel() {
   useEffect(() => {
     async function fetchBanners() {
       try {
-        const res = await api.get("/carousel");
-        if (res.data && res.data.length > 0) {
+        const res = await api.get("/carousel"); // OJO: Ver punto 2 abajo sobre la ruta
+        
+        // --- CORRECCIÓN AQUÍ ---
+        // Verificamos explícitamente si es un ARRAY
+        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
           setSlides(res.data);
         } else {
-          // Fallback: Imágenes por defecto si no hay nada en la BD
-          setSlides([
-            { id: 1, imageUrl: "/banner_n1.png", titulo: "Bienvenido" },
-            { id: 2, imageUrl: "/banner_n2.png", titulo: "Ofertas" }
-          ]);
+          // Si devuelve texto, objeto u otra cosa rara, usamos el fallback
+          console.warn("La API no devolvió una lista válida:", res.data);
+          throw new Error("Formato inválido"); // Forzamos ir al catch
         }
+
       } catch (error) {
         console.error("Error cargando carrusel", error);
-        // Fallback en caso de error
+        // Fallback (Tus imágenes por defecto)
         setSlides([
-            { id: 1, imageUrl: "/banner_n1.png" },
-            { id: 2, imageUrl: "/banner_n2.png" }
+            { id: 1, imageUrl: "/banner_n1.png", titulo: "Bienvenido" },
+            { id: 2, imageUrl: "/banner_n2.png", titulo: "Ofertas" }
         ]);
       } finally {
         setCargando(false);
