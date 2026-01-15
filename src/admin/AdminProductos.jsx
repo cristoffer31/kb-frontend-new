@@ -32,7 +32,7 @@ export default function AdminProductos() {
   async function cargar() {
     try {
         const [resProd, resCat] = await Promise.all([
-            listarProductos(),
+            listarProductos('?limit=todo'),
             listarCategorias()
         ]);
         setProductos(Array.isArray(resProd) ? resProd : []);
@@ -137,6 +137,32 @@ export default function AdminProductos() {
       } 
   }
 
+  async function toggleEstado(producto) {
+      try {
+          const nuevoEstado = !producto.activo;
+          const datos = {
+              nombre: producto.nombre,
+              precio: producto.precio,
+              descripcion: producto.descripcion,
+              stock: producto.stock,
+              categoriaId: producto.categoria_id, 
+              codigoBarras: producto.codigo_barras,
+              precioOferta: producto.precio_oferta,
+              enOferta: producto.oferta,
+              talla: producto.talla,
+              variante: producto.variante,
+              codigoAgrupador: producto.codigo_agrupador,
+              activo: nuevoEstado 
+          };
+
+          await actualizarProducto(producto.id, datos, null);
+          cargar(); 
+      } catch (error) {
+          console.error(error);
+          alert("No se pudo cambiar el estado");
+      }
+  }
+
   return (
     <div className="admin-productos">
       <h2>Gestionar Productos</h2>
@@ -197,19 +223,56 @@ export default function AdminProductos() {
         <button type="submit" disabled={cargando} style={{gridColumn: '1 / -1'}}>
             {cargando ? "Procesando..." : (editId ? "💾 Guardar Cambios" : "➕ Crear Producto")}
         </button>
+        {editId && (
+        <button 
+            type="button" 
+            onClick={limpiarFormulario} 
+            style={{
+                background: '#64748b', 
+                flex: 0.3 
+            }}
+        >
+            ❌ Cancelar
+        </button>
+    )}
       </form>
 
       {/* TABLA (Tu diseño original) */}
       <table className="prod-table" style={{marginTop:'30px'}}>
         <thead>
-            <tr><th>Imagen</th><th>Nombre</th><th>Stock</th><th>Acciones</th></tr>
+            <tr><th>Imagen</th><th>Nombre</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr>
         </thead>
         <tbody>
           {productos.map(p => (
-            <tr key={p.id}>
+            // 1. Agregamos estilo de opacidad: Si está inactivo, se ve al 60%
+            <tr key={p.id} style={{ opacity: p.activo ? 1 : 0.6, transition: 'opacity 0.3s' }}>
                 <td><img src={p.imagen || '/placeholder.png'} height="50" style={{borderRadius:'5px'}} /></td>
                 <td>{p.nombre}</td>
                 <td style={{color: p.stock < 5 ? 'red' : 'white'}}>{p.stock}</td>
+                
+                {/* 2. AQUÍ ESTÁ LA NUEVA CELDA DEL BOTÓN DE ESTADO */}
+                <td>
+                    <button 
+                        type="button"
+                        onClick={() => toggleEstado(p)}
+                        style={{
+                            padding: '6px 12px',
+                            borderRadius: '20px',
+                            border: 'none',
+                            fontSize: '0.85rem',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            // Verde suave si es activo, Rojo suave si es inactivo
+                            backgroundColor: p.activo ? '#dcfce7' : '#fee2e2', 
+                            color: p.activo ? '#166534' : '#991b1b',           
+                            border: p.activo ? '1px solid #86efac' : '1px solid #fca5a5'
+                        }}
+                    >
+                        {p.activo ? '🟢 Activo' : '🔴 Inactivo'}
+                    </button>
+                </td>
+                {/* ----------------------------------------------- */}
+
                 <td>
                     <div className="acciones-group">
                         <button onClick={() => cargarProductoEdicion(p)}>✏️</button>

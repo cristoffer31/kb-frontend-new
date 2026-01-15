@@ -4,7 +4,7 @@ import { AuthContext } from "../context/AuthContext";
 import { crearPedido } from "../services/pedidoService";
 import { validarCuponApi } from "../services/CuponService"; 
 import { listarZonas } from "../services/zonaService"; 
-import api from "../services/api"; // <--- IMPORTANTE: Importamos api para pedir el link
+import api from "../services/api"; 
 import { useNavigate, useLocation } from "react-router-dom";
 import "./Checkout.css";
 import { FaLocationArrow, FaMapMarkerAlt, FaFileInvoiceDollar, FaTicketAlt, FaShieldAlt, FaTruck, FaCreditCard } from "react-icons/fa"; 
@@ -71,7 +71,7 @@ export default function Checkout() {
         );
     };
 
-    // Efectos de carga (Cupones, Zonas)
+    // Efectos de carga
     useEffect(() => {
         if (location.state?.cupon) {
             setCodigoCupon(location.state.cupon);
@@ -115,7 +115,6 @@ export default function Checkout() {
         }
     };
 
-    // Actualizar Refs
     useEffect(() => {
         datosRef.current = { 
             departamento, ciudad, direccion, telefono, 
@@ -133,7 +132,6 @@ export default function Checkout() {
     const manejarPagoWompi = async () => {
         const d = datosRef.current;
         
-        // 1. Validaciones
         if (!d.departamento || !d.direccion || !d.telefono) {
             setMensaje("⚠ Por favor completa Departamento, Dirección y Teléfono.");
             return;
@@ -143,12 +141,10 @@ export default function Checkout() {
         setMensaje("⏳ Registrando pedido y conectando con Wompi...");
 
         try {
-            // 2. CREAR PEDIDO EN LARAVEL PRIMERO (Estado: Pendiente)
-            // Esto asegura que la compra exista en tu BD antes de ir a pagar
             const payload = {
                 ...d,
-                metodoPago: "WOMPI", // Marcamos que es Wompi
-                estado: "Pendiente de Pago", // Estado inicial seguro
+                metodoPago: "WOMPI", 
+                estado: "Pendiente de Pago", 
                 descuento: descuentoSeguro,
                 total: totalFinalPagar,
                 items: d.items.map(it => ({
@@ -158,20 +154,21 @@ export default function Checkout() {
                 }))
             };
 
-            await crearPedido(payload); // <--- ¡AQUÍ SE GUARDA!
+            // --- CORRECCIÓN AQUÍ: Asignamos el resultado a la variable ---
+            const respuestaPedido = await crearPedido(payload); 
         
-// Nota: Dependiendo de tu servicio, el ID puede venir en respuestaPedido.data.id o respuestaPedido.id
-           const pedidoIdCreado = respuestaPedido.data?.id || respuestaPedido.id;
-           
+            // Ahora sí podemos leer el ID de esa variable
+            const pedidoIdCreado = respuestaPedido.data?.id || respuestaPedido.id;
+            
+            // Enviamos el ID al backend para crear el link
             const { data } = await api.post('/wompi/link', { 
                 monto: totalFinalPagar,
                 pedido_id: pedidoIdCreado   
             });
 
             if (data.url_pago) {
-                // 4. LIMPIAR CARRITO Y REDIRIGIR
                 vaciarCarrito(); 
-                window.location.href = data.url_pago; // Nos vamos a Wompi
+                window.location.href = data.url_pago; 
             } else {
                 throw new Error("No se recibió URL de pago");
             }
@@ -267,7 +264,7 @@ export default function Checkout() {
                         <div className="payment-section">
                             <button 
                                 className="btn-pago-bac" 
-                                onClick={manejarPagoWompi} // <--- NUEVA FUNCIÓN
+                                onClick={manejarPagoWompi} 
                                 disabled={procesando}
                             >
                                 <FaCreditCard style={{marginRight: '10px'}} />

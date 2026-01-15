@@ -85,10 +85,10 @@ function Navbar() {
 
   const handleSearch = () => {
     if (search.trim()) {
-      navigate(`/productos?buscar=${encodeURIComponent(search)}`);
       setOpen(false); 
-      setMostrarSugerencias(false);
-      setSearch(""); // Limpiar búsqueda opcional
+    setMostrarSugerencias(false);
+    navigate(`/productos?buscar=${encodeURIComponent(search)}`);
+      setSearch("");
     }
   };
 

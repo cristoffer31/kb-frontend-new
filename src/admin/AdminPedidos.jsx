@@ -7,7 +7,7 @@ import "./AdminPedidos.css";
 import { 
     FaSearch, FaMapMarkerAlt, FaWhatsapp, FaPrint, FaTimes, FaBoxOpen, 
     FaClock, FaShippingFast, FaCheckCircle, FaTimesCircle, FaBox, 
-    FaCreditCard, FaMapMarkedAlt, FaUser
+    FaCreditCard, FaMapMarkedAlt, FaUser, FaMoneyBillWave
 } from "react-icons/fa";
 
 export default function AdminPedidos() {
@@ -55,11 +55,24 @@ export default function AdminPedidos() {
     } catch (error) { alert("Error cargando detalle"); }
   }
 
+  // --- FUNCIÓN QUE CAMBIA EL ESTADO ---
   async function cambiarEstado(id, nuevoEstado) {
-    if(!window.confirm(`¿Cambiar estado a ${nuevoEstado}?`)) return;
-    await adminActualizarEstado(id, nuevoEstado);
-    cargar();
-    if(detalle && detalle.id === id) setDetalle({...detalle, estado: nuevoEstado});
+    if(!window.confirm(`¿Cambiar estado del Pedido #${id} a ${nuevoEstado}?`)) return;
+    try {
+        await adminActualizarEstado(id, nuevoEstado);
+        // Actualizamos la lista localmente para que se refleje rápido
+        const nuevosPedidos = pedidos.map(p => 
+            p.id === id ? { ...p, estado: nuevoEstado } : p
+        );
+        setPedidos(nuevosPedidos);
+        
+        if(detalle && detalle.id === id) {
+            setDetalle({...detalle, estado: nuevoEstado});
+        }
+    } catch (error) {
+        alert("Error al actualizar estado");
+        console.error(error);
+    }
   }
 
   const enviarWhatsapp = (telefono, nombre) => {
@@ -80,49 +93,41 @@ export default function AdminPedidos() {
       }
   };
 
-  // --- CORRECCIÓN FINAL GPS ---
-  // Esta función repara enlaces rotos y formatea coordenadas correctamente
   const getMapUrl = (coords) => {
       if (!coords) return null;
       let val = String(coords).trim();
-      
-      // 1. Validaciones de basura
       if (["0", "null", "undefined", "sin gps"].includes(val.toLowerCase()) || val.length < 5) return null;
-      
-      // 2. REPARACIÓN DE URLS "SUCIAS" (Lo que vi en tu base de datos)
-      // Si la URL contiene 'google' y 'q=', extraemos las coordenadas limpias
       if (val.includes("google") && val.includes("q=")) {
           try {
-              // Extrae lo que está después de q= (ej: 13.5,-89.2)
               const parts = val.split("q=");
               if (parts[1]) {
-                  const cleanCoords = parts[1].split("&")[0]; // Quita parametros extra si los hay
-                  return `https://www.google.com/maps?q=${cleanCoords}`;
+                  const cleanCoords = parts[1].split("&")[0];
+                  return `https://googleusercontent.com/maps.google.com/?q=${cleanCoords}`;
               }
           } catch (e) { console.error("Error parseando mapa", e); }
       }
-
-      // 3. Si ya es un link normal que empieza con http (y no entró en el fix de arriba)
       if (val.toLowerCase().startsWith("http")) return val;
-      
-      // 4. Si son solo números (ej: 13.67, -89.23)
-      return `https://www.google.com/maps?q=${val}`;
+      return `https://googleusercontent.com/maps.google.com/?q=${val}`;
   };
 
   function filtrarPedidos() {
     return pedidos.filter(p => {
         const estadoReal = (p.estado || "PENDIENTE").toUpperCase();
+        
+        if (busqueda) {
+            const texto = busqueda.trim().toLowerCase();
+            const id = (p.id || "").toString();
+            const transaccion = (p.transaction_id || "").toLowerCase();
+            if (id.includes(texto) || transaccion.includes(texto)) return true;
+            return false;
+        }
+
         if (filtro !== "TODOS" && estadoReal !== filtro) return false;
         
         const fecha = (p.created_at || "").split('T')[0];
         if (fechaInicio && fecha < fechaInicio) return false;
         if (fechaFin && fecha > fechaFin) return false;
 
-        if (busqueda) {
-            const texto = busqueda.trim();
-            const id = (p.id || "").toString();
-            if (!id.includes(texto)) return false;
-        }
         return true;
     });
   }
@@ -139,11 +144,11 @@ export default function AdminPedidos() {
       <div className="pedidos-filtros">
         <select value={filtro} onChange={(e) => setFiltro(e.target.value)} className="filtro-select">
           <option value="TODOS">Todos los Estados</option>
-          <option value="PENDIENTE DE PAGO">⏳ Esperando Pago BAC</option>
-          <option value="PENDIENTE">Pendientes (Pagados)</option>
-          <option value="ENVIADO">Enviados</option>
-          <option value="ENTREGADO">Entregados</option>
-          <option value="CANCELADO">Cancelados</option>
+          <option value="PENDIENTE DE PAGO">💳 Esperando Pago</option>
+          <option value="PENDIENTE">⏳ Pendientes (Pagados)</option>
+          <option value="ENVIADO">🚚 Enviados</option>
+          <option value="ENTREGADO">✅ Entregados</option>
+          <option value="CANCELADO">❌ Cancelados</option>
         </select>
         
         <div className="filtro-fechas">
@@ -154,7 +159,7 @@ export default function AdminPedidos() {
 
         <div className="buscador">
             <FaSearch className="icon-search"/>
-            <input type="text" placeholder="Buscar ID..." value={busqueda} onChange={e=>setBusqueda(e.target.value)}/>
+            <input type="text" placeholder="Buscar ID o Ref Wompi..." value={busqueda} onChange={e=>setBusqueda(e.target.value)}/>
         </div>
       </div>
 
@@ -162,7 +167,9 @@ export default function AdminPedidos() {
         <table className="tabla-pedidos">
             <thead>
                 <tr>
-                    <th>ID</th><th>Cliente</th><th>Contacto</th><th>Total</th><th>Estado</th><th>Fecha</th><th>Acciones</th>
+                    <th>ID</th><th>Cliente</th><th>Total</th><th>Estado</th>
+                    <th>Ref. Wompi</th>
+                    <th>Fecha</th><th>Acciones Rápidas</th>
                 </tr>
             </thead>
             <tbody>
@@ -173,39 +180,61 @@ export default function AdminPedidos() {
                             <div className="cliente-nombre">{p.user?.nombre || "Invitado"}</div>
                             <small className="cliente-zona">{p.departamento}</small>
                         </td>
-                        <td>
-                            {p.telefono ? (
-                                <button className="btn-whatsapp-sm" onClick={() => enviarWhatsapp(p.telefono, p.user?.nombre)}>
-                                    <FaWhatsapp/> {p.telefono}
-                                </button>
-                            ) : <span style={{color:'#64748b'}}>--</span>}
-                        </td>
                         <td className="td-total">
                            <span className={p.estado === 'Pendiente de Pago' ? 'monto-bac' : ''}>
                               ${Number(p.total).toFixed(2)}
                            </span>
                         </td>
+                        
+                        {/* COLUMNA ESTADO (Badge Visual) */}
                         <td>
                             <span className={`badge-pedido ${(p.estado || "PENDIENTE").replace(/\s/g, '-').toLowerCase()}`}>
                                 {getIconoEstado(p.estado)} <span style={{marginLeft:'4px'}}>{p.estado}</span>
                             </span>
                         </td>
+                        
+                        {/* COLUMNA WOMPI */}
+                        <td>
+                            {p.transaction_id ? (
+                                <span style={{
+                                    display:'flex', alignItems:'center', gap:'4px', 
+                                    background:'#dcfce7', color:'#166534', 
+                                    padding:'2px 6px', borderRadius:'4px', fontSize:'0.75rem', fontWeight:'bold'
+                                }}>
+                                    <FaCheckCircle/> {p.transaction_id.substring(0,8)}...
+                                </span>
+                            ) : p.estado === 'Pendiente de Pago' ? (
+                                <span style={{color:'#f59e0b', fontSize:'0.8rem'}}>Esperando...</span>
+                            ) : (
+                                <span style={{color:'#94a3b8', fontSize:'0.8rem'}}>--</span>
+                            )}
+                        </td>
+
                         <td>{new Date(p.created_at).toLocaleDateString()}</td>
+                        
+                        {/* --- AQUÍ ESTÁ EL CAMBIO: ACCIONES + SELECTOR RESTAURADO --- */}
                         <td className="td-acciones">
-                            <button onClick={() => verDetalle(p.id)} className="btn-ver" title="Ver Detalles">
-                                <FaBoxOpen/>
-                            </button>
+                            <div style={{display:'flex', gap:'5px', marginBottom:'5px'}}>
+                                <button onClick={() => verDetalle(p.id)} className="btn-ver" title="Ver Detalles">
+                                    <FaBoxOpen/>
+                                </button>
+                                <button className="btn-whatsapp-sm" onClick={() => enviarWhatsapp(p.telefono, p.user?.nombre)} title="WhatsApp">
+                                    <FaWhatsapp/>
+                                </button>
+                            </div>
+                            
+                            {/* SELECTOR PARA CAMBIO RÁPIDO */}
                             <select 
                                 className="select-estado-mini" 
                                 value={p.estado} 
                                 onChange={(e) => cambiarEstado(p.id, e.target.value)}
-                                style={p.estado === 'Pendiente de Pago' ? {borderColor: '#be123c', fontWeight: 'bold'} : {}}
+                                style={{fontSize:'0.8rem', padding:'2px', width:'100%'}}
                             >
-                                <option value="PENDIENTE DE PAGO">Esperando Pago</option>
-                                <option value="PENDIENTE">Pagado / Listo</option>
-                                <option value="ENVIADO">Enviado</option>
-                                <option value="ENTREGADO">Entregado</option>
-                                <option value="CANCELADO">Cancelado</option>
+                                <option value="PENDIENTE DE PAGO">💳 Esperando Pago</option>
+                                <option value="PENDIENTE">⏳ Pendiente</option>
+                                <option value="ENVIADO">🚚 Enviado</option>
+                                <option value="ENTREGADO">✅ Entregado</option>
+                                <option value="CANCELADO">❌ Cancelado</option>
                             </select>
                         </td>
                     </tr>
@@ -226,9 +255,6 @@ export default function AdminPedidos() {
                 </span>
               </div>
               <div className="header-actions">
-                 <span className={`status-pill ${detalle.estado.replace(/\s/g, '-').toLowerCase()}`}>
-                    {getIconoEstado(detalle.estado)} {detalle.estado}
-                 </span>
                  <button onClick={() => setDetalle(null)} className="btn-close-premium"><FaTimes/></button>
               </div>
             </div>
@@ -244,40 +270,45 @@ export default function AdminPedidos() {
                       </div>
                   </div>
 
-                  <div className="info-card">
-                      <div className="card-label"><FaMapMarkerAlt/> Logística</div>
+                  <div className="info-card" style={detalle.transaction_id ? {borderColor:'#22c55e', background:'#f0fdf4'} : {}}>
+                      <div className="card-label" style={{color: detalle.transaction_id ? '#15803d' : '#64748b'}}>
+                          <FaMoneyBillWave/> Pago ({detalle.metodo_pago})
+                      </div>
                       <div className="card-value">
-                        {detalle.departamento || detalle.zona || "Zona n/d"}
+                        {detalle.transaction_id ? (
+                            <span style={{color:'#15803d'}}>PAGADO</span>
+                        ) : (
+                            <span style={{color:'#be123c'}}>PENDIENTE</span>
+                        )}
                       </div>
-                      
-                      {/* LÓGICA DE DIRECCIÓN MEJORADA */}
-                      <div className="sub-data address-box" style={{
-                          whiteSpace: 'pre-wrap', 
-                          lineHeight: '1.4',
-                          background: 'rgba(0,0,0,0.2)',
-                          padding: '8px',
-                          borderRadius: '6px',
-                          marginTop: '5px',
-                          border: '1px solid rgba(255,255,255,0.1)'
-                      }}>
-                          {detalle.direccion_completa || detalle.direccion || detalle.direccion_envio || "Sin dirección exacta registrada"}
+                      <div className="sub-data">
+                          {detalle.transaction_id ? (
+                              <>
+                                <div className="row" style={{fontWeight:'bold', color:'#15803d'}}>ID: {detalle.transaction_id}</div>
+                              </>
+                          ) : (
+                              <div className="row">Esperando confirmación...</div>
+                          )}
+                          <div className="row">Tipo: {detalle.tipo_comprobante}</div>
                       </div>
+                  </div>
 
-                      {/* BOTÓN GPS CORREGIDO */}
+                  <div className="info-card">
+                      <div className="card-label"><FaMapMarkerAlt/> Entrega</div>
+                      <div className="card-value">
+                        {detalle.departamento || "Zona n/d"}
+                      </div>
+                      <div className="sub-data address-box" style={{
+                          whiteSpace: 'pre-wrap', lineHeight: '1.4', background: 'rgba(0,0,0,0.05)',
+                          padding: '8px', borderRadius: '6px', marginTop: '5px'
+                      }}>
+                          {detalle.direccion_completa || detalle.direccion || "Sin dirección"}
+                      </div>
                       {getMapUrl(detalle.coordenadas) && (
                           <a href={getMapUrl(detalle.coordenadas)} target="_blank" rel="noopener noreferrer" className="btn-action-text blue" style={{marginTop:'8px', display:'inline-block'}}>
                               <FaMapMarkedAlt/> Abrir GPS
                           </a>
                       )}
-                  </div>
-
-                  <div className="info-card">
-                      <div className="card-label"><FaCreditCard/> Pago</div>
-                      <div className="card-value">{detalle.metodo_pago}</div>
-                      <div className="sub-data">
-                          <div className="row"><span>Tipo:</span> {detalle.tipo_comprobante?.replace('_', ' ')}</div>
-                          {detalle.codigo_cupon && <div className="row"><span>Cupón:</span> {detalle.codigo_cupon}</div>}
-                      </div>
                   </div>
               </div>
 
@@ -285,9 +316,7 @@ export default function AdminPedidos() {
                   <h4 className="section-title"><FaBoxOpen/> Productos</h4>
                   <table className="premium-table">
                       <thead>
-                          <tr>
-                              <th>Producto</th><th className="th-center">Cant.</th><th className="th-right">Precio</th><th className="th-right">Subtotal</th>
-                          </tr>
+                          <tr><th>Producto</th><th className="th-center">Cant.</th><th className="th-right">Precio</th><th className="th-right">Subtotal</th></tr>
                       </thead>
                       <tbody>
                           {(detalle.items_relacion || []).map((item, i) => (
@@ -304,8 +333,9 @@ export default function AdminPedidos() {
 
               <div className="premium-footer">
                     <div className="footer-actions">
+                        {/* SELECTOR EN EL MODAL TAMBIÉN */}
                         <select className="status-selector" value={detalle.estado} onChange={(e) => cambiarEstado(detalle.id, e.target.value)}>
-                           <option value="PENDIENTE DE PAGO">💳 ESPERANDO PAGO BAC</option>
+                           <option value="PENDIENTE DE PAGO">💳 ESPERANDO PAGO</option>
                            <option value="PENDIENTE">⏳ PENDIENTE (PAGADO)</option>
                            <option value="ENVIADO">🚚 ENVIADO</option>
                            <option value="ENTREGADO">✅ ENTREGADO</option>
@@ -318,22 +348,15 @@ export default function AdminPedidos() {
                         <div className="sum-row"><span>Subtotal:</span> <span>${subtotalProductos.toFixed(2)}</span></div>
                         <div className="sum-row">
                             <span>Envío:</span> 
-                            {Number(detalle.costo_envio) === 0 ? (
-                                <span style={{color: '#059669', fontWeight: 'bold'}}>GRATIS</span>
-                            ) : (
-                                <span>+ ${Number(detalle.costo_envio).toFixed(2)}</span>
-                            )}
+                            {Number(detalle.costo_envio) === 0 ? <span style={{color: '#059669', fontWeight: 'bold'}}>GRATIS</span> : <span>+ ${Number(detalle.costo_envio).toFixed(2)}</span>}
                         </div>
-                        
                         {Number(detalle.descuento) > 0 && (
                             <div className="sum-row discount" style={{color: '#e53e3e', fontWeight: 'bold'}}>
                                 <span>Descuento:</span> <span>- ${Number(detalle.descuento).toFixed(2)}</span>
                             </div>
                         )}
-                        
                         <div className="sum-row total">
-                            <span>TOTAL</span>
-                            <span className="total-amount">${Number(detalle.total).toFixed(2)}</span>
+                            <span>TOTAL</span> <span className="total-amount">${Number(detalle.total).toFixed(2)}</span>
                         </div>
                     </div>
               </div>

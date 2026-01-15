@@ -6,7 +6,6 @@ import { FaFire, FaStar, FaShippingFast, FaBoxOpen, FaLock, FaCheckCircle } from
 import ProductCard from "../components/ProductCard";
 import Carousel from "../components/Carousel";
 import ProductModal from "../components/ProductModal"; 
-// 1. Asegúrate de que este import esté presente (ya lo tenías)
 import Nosotros from '../components/Nosotros';
 
 // Servicios
@@ -28,25 +27,24 @@ export default function Home() {
     // Carga de datos inicial
     const fetchData = async () => {
       try {
+        // Hacemos todas las peticiones en paralelo
         const [resProds, resOfertas, resCats] = await Promise.all([
           listarProductos(),
           listarOfertas(),
           listarCategorias()
         ]);
         
-        // --- CORRECCIÓN AQUÍ ---
-        
-        // 1. Productos: Verificamos si vienen paginados (.data.data) o simples (.data)
+        // --- 1. PRODUCTOS ---
         const prodsData = resProds.data;
         if (prodsData && prodsData.data && Array.isArray(prodsData.data)) {
-             setProductos(prodsData.data); // Caso Paginación (Laravel paginate)
+             setProductos(prodsData.data); // Caso Paginación
         } else if (Array.isArray(prodsData)) {
-             setProductos(prodsData);      // Caso Lista simple (Laravel get)
+             setProductos(prodsData);      // Caso Lista simple
         } else {
-             setProductos([]);             // Por seguridad, si falla
+             setProductos([]);
         }
 
-        // 2. Ofertas: Misma lógica
+        // --- 2. OFERTAS ---
         const ofertasData = resOfertas.data;
         if (ofertasData && ofertasData.data && Array.isArray(ofertasData.data)) {
              setOfertas(ofertasData.data);
@@ -56,20 +54,36 @@ export default function Home() {
              setOfertas([]);
         }
 
-        // 3. Categorías
-        const catsData = resCats.data;
-        setCategorias(Array.isArray(catsData) ? catsData : []);
-        
+        // --- 3. CATEGORÍAS (Lógica Blindada) ---
+        // Buscamos el array en todas las posibles estructuras que devuelve Laravel/Axios
+        let catsEncontradas = [];
+
+        if (Array.isArray(resCats)) {
+            // Caso A: El servicio devuelve el array puro
+            catsEncontradas = resCats;
+        } else if (resCats && Array.isArray(resCats.data)) {
+            // Caso B: Viene dentro de 'data' (Estándar de Axios o Laravel Resource)
+            catsEncontradas = resCats.data;
+        } else if (resCats && resCats.data && Array.isArray(resCats.data.data)) {
+            // Caso C: Viene muy anidado (Paginación + Axios)
+            catsEncontradas = resCats.data.data;
+        }
+
+        setCategorias(catsEncontradas);
+
       } catch (err) {
-        console.error("Error al cargar datos de la Home:", err);
+        // En producción no mostramos logs, pero manejamos el error silenciosamente
+        // o podrías poner un setCategorias([]) aquí si quieres asegurar que no falle.
       }
     };
+
     fetchData();
   }, []);
 
   const getImagenUrl = (img) => {
     if (!img) return "https://via.placeholder.com/150?text=No+Image";
     if (img.startsWith("http")) return img;
+
     return `${BASE_URL}${img}`;
   };
 
@@ -118,24 +132,33 @@ export default function Home() {
             <div className="title-underline"></div>
           </div>
           
-          <div className="categories-grid">
-            {categorias.map(cat => (
-              <div key={cat.id} className="category-item-modern" onClick={() => navigate(`/productos?cat=${cat.id}`)}>
+         <div className="categories-grid">
+          {categorias.length > 0 ? (
+            categorias.map((cat) => (
+              <div 
+                key={cat.id} 
+                className="category-item-modern" 
+                onClick={() => navigate(`/productos?cat=${cat.id}`)}
+              >
                 <div className="category-image-wrapper">
-                  {cat.imagen || cat.imagenUrl ? (
-                    <img 
-                      src={getImagenUrl(cat.imagen || cat.imagenUrl)} 
-                      alt={cat.nombre} 
-                      className="category-img"
-                    />
-                  ) : (
-                    <div className="category-icon-placeholder">{cat.nombre?.charAt(0)}</div>
-                  )}
+                  <img 
+                    src={getImagenUrl(cat.imagen)} 
+                    alt={cat.nombre} 
+                    className="category-img"
+                    onError={(e) => { 
+                      e.target.onerror = null; 
+                      e.target.src = "https://via.placeholder.com/150?text=Error+Imagen"; 
+                    }}
+                  />
                 </div>
                 <h3 className="category-name">{cat.nombre}</h3>
               </div>
-            ))}
-          </div>
+            ))
+          ) : (
+             /* Aquí podrías poner un mensaje temporal o nada si prefieres */
+            <p className="text-center">Cargando categorías...</p>
+          )}
+        </div>
         </section>
 
         {/* 3. OFERTAS RELÁMPAGO */}
@@ -162,8 +185,7 @@ export default function Home() {
           <Carousel />
         </div>
 
-        {/* 5. SECCIÓN NOSOTROS (NUEVO) */}
-        {/* Aquí insertamos el componente que acabamos de crear */}
+        {/* 5. SECCIÓN NOSOTROS */}
         <Nosotros />
       
         {/* 6. LO MÁS VENDIDO */}

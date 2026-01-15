@@ -27,7 +27,7 @@ export default function AdminInventario() {
   // Función principal de filtrado y carga
   async function filtrar() {
     try {
-        const respuesta = await listarProductos();
+        const respuesta = await listarProductos('?limit=todo');
         
         // --- CORRECCIÓN CLAVE PARA LARAVEL ---
         // 1. Intentamos obtener el array de productos buscando en todas las ubicaciones posibles

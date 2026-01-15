@@ -4,10 +4,13 @@ import api from "./api";
  * Lista productos con paginación
  * @param {number} page - El número de página a solicitar
  */
-export async function listarProductos(page = 1) {
+export async function listarProductos(queryOrPage = 1) {
     try {
-        const res = await api.get(`/productos?page=${page}`);
-        // Retornamos toda la data porque contiene la info de paginación
+        const query = typeof queryOrPage === 'number' 
+            ? `?page=${queryOrPage}` 
+            : queryOrPage;
+
+        const res = await api.get(`/productos${query}`);
         return res.data; 
     } catch (error) {
         console.error("Error en listarProductos service:", error);
@@ -15,6 +18,10 @@ export async function listarProductos(page = 1) {
     }
 }
 
+export async function buscarProductosRapido(termino) {
+    const res = await api.get(`/productos?buscar=${termino}`);
+    return res.data;
+}
 export async function buscarProductos(params) {
     const res = await api.get('/productos/buscar', { params });
     return res.data;
