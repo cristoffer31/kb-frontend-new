@@ -28,40 +28,36 @@ export default function Productos() {
         cargarData();
     }, [page, location.search]);
 
-    async function cargarData() {
+   async function cargarData() {
         setCargando(true);
         try {
             const urlParams = new URLSearchParams(location.search);
             urlParams.set('page', page);
-
             const queryString = `?${urlParams.toString()}`;
-            console.log("Petición final:", queryString); 
 
-            const res = await listarProductos(queryString);
+            // Llamamos al servicio
+            const respuesta = await listarProductos(queryString);
             
-            // Lógica robusta para detectar datos
-            if (res && res.data) {
-                // Si viene paginado (Laravel standard)
-                if (res.data.data && Array.isArray(res.data.data)) {
-                    setProductos(res.data.data);
-                    setLastPage(res.data.last_page || 1);
-                    setTotal(res.data.total || 0);
-                } 
-                // Si viene array directo (sin paginación)
-                else if (Array.isArray(res.data)) {
-                    setProductos(res.data);
-                    setLastPage(1);
-                    setTotal(res.data.length);
-                }
-                // Caso alternativo (estructura plana)
-                else {
-                     setProductos(res.data);
-                     setLastPage(res.last_page || 1);
-                     setTotal(res.total || 0);
-                }
+            
+
+            if (respuesta && respuesta.data && Array.isArray(respuesta.data)) {
+                setProductos(respuesta.data);      
+                setLastPage(respuesta.last_page);  
+                setTotal(respuesta.total);
+            } 
+            
+            else if (Array.isArray(respuesta)) {
+                setProductos(respuesta);
+                setLastPage(1);
+                setTotal(respuesta.length);
             }
+            
+            else {
+                setProductos([]);
+            }
+
         } catch (error) {
-            console.error("Error cargando productos:", error);
+            
             setProductos([]);
         } finally {
             setCargando(false);

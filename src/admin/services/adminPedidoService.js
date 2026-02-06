@@ -16,7 +16,7 @@ export async function adminObtenerPedido(id) {
 
 export async function adminActualizarEstado(id, nuevoEstado) {
   // Laravel espera 'estado', no 'status' usualmente, enviamos ambos por seguridad
-  const res = await api.put(`/pedidos/${id}`, {
+  const res = await api.post(`/pedidos/${id}`, {
     estado: nuevoEstado,
     status: nuevoEstado
   });

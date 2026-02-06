@@ -80,12 +80,15 @@ export default function Home() {
     fetchData();
   }, []);
 
-  const getImagenUrl = (img) => {
-    if (!img) return "https://via.placeholder.com/150?text=No+Image";
-    if (img.startsWith("http")) return img;
+ const getImagenUrl = (img) => {
+  if (!img) return "https://via.placeholder.com/150?text=No+Image";
 
-    return `${BASE_URL}${img}`;
-  };
+  const cleanImg = img.replace('/api/storage/', '/storage/');
+
+  if (cleanImg.startsWith("http")) return cleanImg;
+
+  return `${BASE_URL}${cleanImg}`;
+};
 
   const productosDisponibles = productos.filter((p) => (p.stock || 0) > 0);
 

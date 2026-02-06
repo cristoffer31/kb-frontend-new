@@ -94,22 +94,24 @@ export default function ProductModal({ producto, onClose }) {
                 <div className="cantidad-control-modern">
                     
                     <div className="qty-selector">
-                        <button 
-                            className="qty-btn" 
-                            onClick={() => setCantidad(c => Math.max(1, c - 1))}
-                            disabled={agregado}
-                        >
-                            <FaMinus size={12} />
-                        </button>
-                        <div className="qty-value">{cantidad}</div>
-                        <button 
-                            className="qty-btn" 
-                            onClick={() => setCantidad(c => (c < stock ? c + 1 : c))} 
-                            disabled={cantidad >= stock || agregado}
-                        >
-                            <FaPlus size={12} />
-                        </button>
-                    </div>
+    <button 
+        className="qty-btn" 
+        onClick={() => setCantidad(c => Math.max(1, c - 1))}
+        disabled={agregado}
+    >
+        <FaMinus size={12} />
+    </button>
+    
+    <div className="qty-value">{cantidad}</div>
+    
+    <button 
+        className="qty-btn" 
+        onClick={() => setCantidad(c => (c < stock ? c + 1 : c))} 
+        disabled={cantidad >= stock || agregado}
+    >
+        <FaPlus size={12} />
+    </button>
+</div>
 
                     <div className="precio-final-box">
                         <span>Total estimado</span>

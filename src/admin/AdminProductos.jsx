@@ -246,30 +246,29 @@ export default function AdminProductos() {
           {productos.map(p => (
             // 1. Agregamos estilo de opacidad: Si está inactivo, se ve al 60%
             <tr key={p.id} style={{ opacity: p.activo ? 1 : 0.6, transition: 'opacity 0.3s' }}>
-                <td><img src={p.imagen || '/placeholder.png'} height="50" style={{borderRadius:'5px'}} /></td>
+                <td><img src={p.imagen ? p.imagen.replace('/api/storage/', '/storage/') : '/placeholder.png'} height="50" style={{borderRadius:'5px'}}/></td>
                 <td>{p.nombre}</td>
                 <td style={{color: p.stock < 5 ? 'red' : 'white'}}>{p.stock}</td>
                 
                 {/* 2. AQUÍ ESTÁ LA NUEVA CELDA DEL BOTÓN DE ESTADO */}
                 <td>
                     <button 
-                        type="button"
-                        onClick={() => toggleEstado(p)}
-                        style={{
-                            padding: '6px 12px',
-                            borderRadius: '20px',
-                            border: 'none',
-                            fontSize: '0.85rem',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            // Verde suave si es activo, Rojo suave si es inactivo
-                            backgroundColor: p.activo ? '#dcfce7' : '#fee2e2', 
-                            color: p.activo ? '#166534' : '#991b1b',           
-                            border: p.activo ? '1px solid #86efac' : '1px solid #fca5a5'
-                        }}
-                    >
-                        {p.activo ? '🟢 Activo' : '🔴 Inactivo'}
-                    </button>
+    type="button"
+    onClick={() => toggleEstado(p)}
+    style={{
+        padding: '6px 12px',
+        borderRadius: '20px',
+        fontSize: '0.85rem',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+        // Se eliminó la línea "border: 'none'," de aquí
+        backgroundColor: p.activo ? '#dcfce7' : '#fee2e2', 
+        color: p.activo ? '#166534' : '#991b1b',           
+        border: p.activo ? '1px solid #86efac' : '1px solid #fca5a5'
+    }}
+>
+    {p.activo ? '🟢 Activo' : '🔴 Inactivo'}
+</button>
                 </td>
                 {/* ----------------------------------------------- */}
 

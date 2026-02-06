@@ -60,7 +60,9 @@ export default function Carousel() {
       <div className="carousel-track" style={{ transform: `translateX(-${current * 100}%)` }}>
         {slides.map((slide, index) => (
           <div key={slide.id || index} className="carousel-slide">
-            <img src={slide.imageUrl} alt={slide.titulo || "Banner"} />
+            <img 
+  src={slide.imageUrl?.replace('/api/storage/', '/storage/')} 
+  alt={slide.titulo || "Banner"} />
             {/* Opcional: Mostrar título si existe */}
             {slide.titulo && (
                 <div className="carousel-caption">

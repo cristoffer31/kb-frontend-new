@@ -93,13 +93,79 @@
     to { transform: rotate(360deg); }
 }
 
+/* ... (manten tu código de escritorio igual arriba) ... */
+
 @media (max-width: 768px) {
-    .productos-grid {
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-        gap: 1rem;
+    /* 1. Ajuste del contenedor principal para que no pierda tanto espacio a los lados */
+    .productos-page {
+        padding: 1rem 2%;
     }
-    
+
+    .productos-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .productos-header h1 {
+        font-size: 1.8rem; /* Título más acorde al móvil */
+    }
+
+    /* 2. Cuadrícula de productos: 2 columnas perfectas */
+    .productos-grid {
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 12px; /* Espacio equilibrado */
+        padding: 5px;
+        margin-bottom: 2rem;
+    }
+
+    /* 3. Ajuste de la Paginación para móviles */
+    .pagination-container {
+        gap: 0.8rem;
+        padding: 0.6rem;
+        width: 95%; /* Que ocupe casi todo el ancho para que sea fácil tocar */
+        border-radius: 15px; /* Menos redondeado para ganar espacio interno */
+    }
+
+    .pagination-btn {
+        padding: 0.7rem 1rem;
+        justify-content: center;
+        flex: 1; /* Hace que los botones crezcan para ser más fáciles de tocar */
+    }
+
     .pagination-btn span {
-        display: none; /* Oculta el texto en móviles para ahorrar espacio */
+        display: none; /* Mantenemos oculto el texto para evitar que se amontone */
+    }
+
+    .pagination-pages {
+        font-size: 0.85rem;
+        white-space: nowrap; /* Evita que el texto de la página se salte de línea */
+    }
+
+    /* Ajuste de estados de carga */
+    .productos-loading, .productos-empty {
+        height: 40vh;
+    }
+
+    .productos-grid {
+        gap: 15px; /* Un poco más de espacio entre tarjetas */
+        padding: 10px 15px;
+    }
+
+    .product-card {
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between; /* Alinea los botones al fondo */
+        height: 100%; /* Para que todas las tarjetas midan lo mismo */
+    }
+
+    .product-card img {
+        height: 120px; /* Ajustamos la imagen para que no empuje tanto el texto */
+        object-fit: contain;
+    }
+
+    .product-card h3 {
+        font-size: 0.85rem;
+        margin: 8px 0;
+        min-height: 40px; /* Evita que nombres cortos desalineen los precios */
     }
 }

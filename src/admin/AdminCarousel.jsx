@@ -69,7 +69,7 @@ export default function AdminCarousel() {
       <div className="banners-grid">
         {imagenes.map(img => (
             <div key={img.id} className="banner-card">
-                <img src={img.imageUrl} alt="banner" />
+                <img src={img.imageUrl.replace('/api/storage/', '/storage/')} alt="banner" />
                 <div className="banner-info">
                     <span>{img.titulo || "Sin título"}</span>
                     <button onClick={() => borrar(img.id)} className="btn-trash">

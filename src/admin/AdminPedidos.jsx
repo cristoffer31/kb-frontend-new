@@ -312,23 +312,42 @@ export default function AdminPedidos() {
                   </div>
               </div>
 
-              <div className="products-container">
+             <div className="products-container">
+
                   <h4 className="section-title"><FaBoxOpen/> Productos</h4>
+
                   <table className="premium-table">
+
                       <thead>
-                          <tr><th>Producto</th><th className="th-center">Cant.</th><th className="th-right">Precio</th><th className="th-right">Subtotal</th></tr>
+
+                          <tr><th>Producto</th><th>Codigo</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr>
+
                       </thead>
+
                       <tbody>
+
                           {(detalle.items_relacion || []).map((item, i) => (
+
                               <tr key={i}>
+
                                   <td>{item.product?.nombre || "N/A"}</td>
-                                  <td className="td-center">{item.cantidad}</td>
-                                  <td className="td-right">${Number(item.precio_unitario).toFixed(2)}</td>
-                                  <td className="td-right bold">${(item.cantidad * item.precio_unitario).toFixed(2)}</td>
+
+                                  <td>{item.product?.codigo_barras || "S/C"}</td>
+
+                                  <td>{item.cantidad}</td>  
+
+                                  <td>${Number(item.precio_unitario).toFixed(2)}</td>
+
+                                  <td>${(item.cantidad * item.precio_unitario).toFixed(2)}</td>
+
                               </tr>
+
                           ))}
+
                       </tbody>
+
                   </table>
+
               </div>
 
               <div className="premium-footer">

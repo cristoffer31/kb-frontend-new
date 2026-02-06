@@ -69,15 +69,10 @@ function prepararFormData(fd, datos, archivo) {
     });
   }
 
-  // CORRECCIÓN 3: DIAGNÓSTICO DE ARCHIVO
-  // Aseguramos que 'archivo' sea realmente un File. 
-  // Si envías un string o un objeto vacío, el servidor lo ignora.
   if (archivo && archivo instanceof File) {
-    console.log("📤 Adjuntando archivo al FormData:", archivo.name);
     fd.append("imagen", archivo);
   } else if (archivo) {
     console.warn("⚠️ CUIDADO: 'archivo' tiene datos pero no es un objeto File válido:", archivo);
-    // Intentamos enviarlo igual por si acaso es un Blob
     fd.append("imagen", archivo);
   }
 }
